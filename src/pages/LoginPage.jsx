@@ -40,6 +40,7 @@ const LoginPage = () => {
 
       if (response.data) {
         const token = response.data.token;
+        console.log(token);
         handleTokenParsing(token);
       } else {
         handleLoginError("Đăng nhập thất bại");
@@ -54,7 +55,7 @@ const LoginPage = () => {
       const tokenParts = token.split(".");
       const payload = JSON.parse(atob(tokenParts[1]));
       const isAdmin = payload.role === "admin";
-
+      console.log(payload);
       if (isAdmin) {
         handleSuccessfulLogin(token, "ADMIN", "/admin/dashboard");
       } else {
@@ -67,12 +68,15 @@ const LoginPage = () => {
   };
 
   const handleEmailConfirmation = (payload, token) => {
-    if (!payload.email_confirm) {
+    const isConfirmed = payload.email_confirm.toLowerCase() === "true";
+    console.log("Email confirm: ", isConfirmed);
+    if (!isConfirmed) {
       setError("Tài khoản chưa được xác thực");
       toast.error("Vui lòng xác thực email trước khi đăng nhập");
-      return;
+      navigate("/signin");
+    } else {
+      handleSuccessfulLogin(token, "USER", "/");
     }
-    handleSuccessfulLogin(token, "USER", "/");
   };
 
   const handleSuccessfulLogin = (token, role, navigateTo) => {
