@@ -13,6 +13,8 @@ const RegisterPage = () => {
     Phone: "",
     Gender: "",
     DoB: "",
+    LastName: "",
+    FirstName: "",
   });
   const [emailSent, setEmailSent] = useState(false);
   const [errors, setErrors] = useState({});
@@ -24,7 +26,7 @@ const RegisterPage = () => {
       ...prev,
       [name]: value,
     }));
-    // Clear error when user starts typing
+
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -101,7 +103,7 @@ const RegisterPage = () => {
     // // Address validation
     if (!formData.Address) {
       newErrors.Address = "Address is required";
-    } else if (formData.Address.length < 10) {
+    } else if (formData.Address.length < 5) {
       newErrors.Address = "Please enter a complete Address";
     }
 
@@ -111,6 +113,7 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log(formData);
     if (validateForm()) {
       try {
         setIsSubmitting(true);
@@ -125,6 +128,8 @@ const RegisterPage = () => {
             DoB: formData.DoB,
             Email: formData.Email,
             Phone: formData.Phone,
+            LastName: formData.LastName,
+            FirstName: formData.FirstName,
           },
           {
             headers: {
@@ -132,7 +137,6 @@ const RegisterPage = () => {
             },
           }
         );
-
         if (response.status === 200) {
           toast.success("Registration successful!");
           setEmailSent(true);
@@ -163,6 +167,8 @@ const RegisterPage = () => {
         Gender: "",
         DoB: "",
         Address: "",
+        LastName: "",
+        FirstName: "",
       });
     };
   }, []);
@@ -271,26 +277,61 @@ const RegisterPage = () => {
                 </div>
               </div>
 
-              {/* {/* Full Name 
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <div className="mt-1">
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  required
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.fullName ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm`}
-                />
-                {errors.fullName && <p className="mt-2 text-sm text-red-600">{errors.fullName}</p>}
+              {/* First Name */}
+              <div>
+                <label
+                  htmlFor="FirstName"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  First Name
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="FirstName"
+                    name="FirstName"
+                    type="text"
+                    required
+                    value={formData.FirstName}
+                    onChange={handleChange}
+                    className={`appearance-none block w-full px-3 py-2 border ${
+                      errors.FirstName ? "border-red-300" : "border-gray-300"
+                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm`}
+                  />
+                  {errors.FirstName && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {errors.FirstName}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div> */}
+
+              {/* Last Name */}
+              <div>
+                <label
+                  htmlFor="LastName"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Last Name
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="LastName"
+                    name="LastName"
+                    type="text"
+                    required
+                    value={formData.LastName}
+                    onChange={handleChange}
+                    className={`appearance-none block w-full px-3 py-2 border ${
+                      errors.LastName ? "border-red-300" : "border-gray-300"
+                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm`}
+                  />
+                  {errors.LastName && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {errors.LastName}
+                    </p>
+                  )}
+                </div>
+              </div>
 
               {/* Username */}
               <div>

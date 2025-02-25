@@ -11,11 +11,19 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    // Kiểm tra token khi component mount
-    const token = localStorage.getItem("token");
-    const userData = JSON.parse(localStorage.getItem("user") || "{}");
-  }, [navigate]);
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   if (!token) {
+  //     navigate("/login");
+  //     return;
+  //   }
+  //   const userData = JSON.parse(localStorage.getItem("user") || "{}");
+
+  //   if (!userData || !userData.id) {
+  //     localStorage.removeItem("token");
+  //     navigate("/login");
+  //   }
+  // }, [navigate]);
 
   useEffect(() => {
     const fetchProducts = async () => {
