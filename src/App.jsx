@@ -24,8 +24,8 @@ import AdminSizePage from "./pages/admin/AdminSizePage";
 import AdminColorPage from "./pages/admin/AdminColorPage";
 import AdminCouponPage from "./pages/admin/AdminCouponPage";
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("token");
-  const userStr = localStorage.getItem("user");
+  const token = sessionStorage.getItem("token");
+  const userStr = sessionStorage.getItem("user");
 
   if (!token || !userStr) {
     // Chặn và chuyển hướng tới trang đăng nhập
