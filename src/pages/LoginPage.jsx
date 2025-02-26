@@ -55,7 +55,7 @@ const LoginPage = () => {
       const tokenParts = token.split(".");
       const payload = JSON.parse(atob(tokenParts[1]));
       const isAdmin = payload.role === "admin";
-      console.log(payload);
+      console.log(isAdmin);
       if (isAdmin) {
         handleSuccessfulLogin(token, "ADMIN", "/admin/dashboard");
       } else {
@@ -80,8 +80,8 @@ const LoginPage = () => {
   };
 
   const handleSuccessfulLogin = (token, role, navigateTo) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem(
+    sessionStorage.setItem("token", token);
+    sessionStorage.setItem(
       "user",
       JSON.stringify({
         Username: formData.Username,
@@ -91,6 +91,7 @@ const LoginPage = () => {
       })
     );
     toast.success("Đăng nhập thành công");
+    console.log("Navigating to:", navigateTo);
     navigate(navigateTo);
   };
 

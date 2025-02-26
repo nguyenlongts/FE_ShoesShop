@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-
+import React from "react";
 const AdminBrandPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [brands, setBrands] = useState([]);
@@ -10,22 +10,22 @@ const AdminBrandPage = () => {
   const [editingBrand, setEditingBrand] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
-    status: 1,
+    isActive: true,
   });
-  const token = localStorage.getItem("token");
+  const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
+  const [pageSize, setPageSize] = useState(5);
+  const token = sessionStorage.getItem("token");
   const headers = { Authorization: `Bearer ${token}` };
   // Fetch brands
   const fetchBrands = async () => {
     try {
-      const token = localStorage.getItem("token");
       const response = await axios.get(
-        "http://localhost:5258/api/Brand/GetAll",
+        `http://localhost:5258/api/Brand/GetAll?pageSize=${pageSize}&pageNum=${pageNumber}`,
         {
           headers,
         }
       );
 
-      console.log(response);
       if (response.data) {
         setBrands(response.data);
       }
@@ -36,50 +36,49 @@ const AdminBrandPage = () => {
 
   useEffect(() => {
     fetchBrands();
-  }, []);
-
+  }, [pageSize, pageNumber]);
+  const handlePageSizeChange = (e) => {
+    const newSize = parseInt(e.target.value, 10);
+    setPageSize(newSize);
+    setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
+  };
+  const handlePageChange = (newPageNumber) => {
+    setPageNumber(newPageNumber);
+  };
   // Create brand
   const handleCreate = async (e) => {
     e.preventDefault();
-    try {
-      try {
-        // Kiểm tra xem màu sắc đã tồn tại hay chưa
-        const response = await axios.get(
-          `http://localhost:8081/saleShoes/brands/name?name=${formData.name}`
-        );
-        if (response.data?.result) {
-          toast.error("Brand đã tồn tại"); // Thông báo nếu màu sắc đã tồn tại
-          return; // Dừng lại nếu đã tồn tại
-        }
-        await axios.post("http://localhost:8081/saleShoes/brands", {
-          name: formData.name,
-          active: true,
-        });
-        toast.success("Tạo thương hiệu thành công");
-        setShowCreateModal(false);
-        setFormData({ name: "", active: true });
-        fetchBrands();
-      } catch (error) {
-        if (error.response && error.response.status === 400) {
-          // Brand không tồn tại, tiếp tục tạo mới
-          await axios.post("http://localhost:8081/saleShoes/brands", {
-            name: formData.name,
-            active: true,
-          });
-          toast.success("Tạo thương hiệu thành công");
-          setShowCreateModal(false);
-          setFormData({ name: "", active: true });
-          fetchBrands();
-        } else {
-          // Xử lý lỗi khác
-          throw error;
-        }
-      }
 
-      // Nếu chưa tồn tại, thực hiện tạo mới
+    try {
+      await axios.post(
+        "http://localhost:5258/api/Brand/Create",
+        {
+          name: formData.name,
+          isActive: formData.isActive,
+        },
+        { headers }
+      );
+
+      toast.success("Tạo danh mục thành công");
+      setShowCreateModal(false);
+      setFormData({ name: "", isActive: true });
+      fetchBrands();
     } catch (error) {
-      console.error("Error creating brand:", error);
-      toast.error("Không thể tạo thương hiệu");
+      // Check if the error is due to category already existing
+      if (error.response) {
+        if (
+          error.response.data &&
+          error.response.data.includes("already exists")
+        ) {
+          toast.error("Thương hiệu đã tồn tại");
+        } else {
+          console.error("Error creating brand:", error);
+          toast.error("Không thể tạo thương hiệu");
+        }
+      } else {
+        console.error("Network error:", error);
+        toast.error("Lỗi kết nối, vui lòng thử lại sau");
+      }
     }
   };
 
@@ -228,7 +227,19 @@ const AdminBrandPage = () => {
           </div>
         </div>
       </div>
-
+      <div>
+        <label htmlFor="pageSize">Page Size:</label>
+        <select
+          id="pageSize"
+          value={pageSize}
+          onChange={handlePageSizeChange}
+          className="border p-2 rounded-md"
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+        </select>
+      </div>
       {/* Brands Table */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-4">
@@ -307,7 +318,23 @@ const AdminBrandPage = () => {
           </table>
         </div>
       </div>
-
+      {/* Pagination */}
+      <div className="flex justify-between items-center mt-6">
+        <button
+          onClick={() => handlePageChange(pageNumber - 1)}
+          disabled={pageNumber === 1}
+          className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
+        >
+          Prev
+        </button>
+        <span>Page {pageNumber}</span>
+        <button
+          onClick={() => handlePageChange(pageNumber + 1)}
+          className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
+        >
+          Next
+        </button>
+      </div>
       {/* Modals */}
       {showCreateModal && <CreateModal />}
       {showEditModal && <EditModal />}

@@ -15,7 +15,7 @@ const AdminColorPage = () => {
   const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
   const [pageSize, setPageSize] = useState(5);
 
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
   const headers = { Authorization: `Bearer ${token}` };
   // Fetch colors
   const fetchColors = async () => {
@@ -35,7 +35,6 @@ const AdminColorPage = () => {
       toast.error("Không thể tải danh sách màu sắc");
     }
   };
-
   useEffect(() => {
     fetchColors();
   }, []);
@@ -44,7 +43,6 @@ const AdminColorPage = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      console.log(formData);
       const response = await axios.get(
         `http://localhost:5258/api/color/GetByName?name=${formData.name}`,
         { headers }
@@ -317,7 +315,7 @@ const AdminColorPage = () => {
                     .includes(searchQuery.trim().toLowerCase())
                 )
                 .map((color) => (
-                  <tr key={color.ColorId} className="border-b">
+                  <tr key={color.colorId} className="border-b">
                     <td className="w-[10%] py-4">{color.colorId}</td>
                     <td className="w-[30%] py-4 text-center">{color.name}</td>
                     <td className="w-[30%] py-4">
