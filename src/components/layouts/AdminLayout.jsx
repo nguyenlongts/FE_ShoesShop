@@ -5,15 +5,15 @@ import { Navigate } from "react-router-dom";
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
 
   if (!token) {
     return <Navigate to="/signin" state={{ from: location }} replace />;
   }
   const handleLogout = () => {
     // Xóa token và user info khỏi localStorage
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
 
     // Hiển thị thông báo
     toast.success("Đăng xuất thành công");
