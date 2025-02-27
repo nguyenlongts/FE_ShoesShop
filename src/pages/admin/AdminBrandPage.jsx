@@ -59,7 +59,7 @@ const AdminBrandPage = () => {
         { headers }
       );
 
-      toast.success("Tạo danh mục thành công");
+      toast.success("Tạo thương hiệu thành công");
       setShowCreateModal(false);
       setFormData({ name: "", isActive: true });
       fetchBrands();
@@ -105,16 +105,18 @@ const AdminBrandPage = () => {
   };
 
   // Toggle brand status
-  const toggleBrandStatus = async (brandID) => {
+  const toggleBrandStatus = async (Id) => {
     try {
+      const brand = brands.find((b) => b.brandID === Id);
+      if (!brand) return;
       const response = await fetch(
-        `http://localhost:5258/api/Brand/UpdateStatus?id=${brandID}`,
+        `http://localhost:5258/api/Brand/UpdateStatus?id=${Id}`,
         {
           method: "PUT",
           headers,
         }
       );
-
+      toast.success("Cập nhật trạng thái thành công");
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Lỗi khi cập nhật trạng thái:", errorData);

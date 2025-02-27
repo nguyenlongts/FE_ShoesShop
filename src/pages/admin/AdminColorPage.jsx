@@ -116,8 +116,6 @@ const AdminColorPage = () => {
           headers,
         }
       );
-
-      // Cập nhật state local
       setColors(
         colors.map((c) =>
           c.colorId === Id ? { ...c, isActive: !c.isActive } : c
@@ -131,8 +129,6 @@ const AdminColorPage = () => {
       toast.error(
         error.response?.data?.message || "Không thể cập nhật trạng thái"
       );
-
-      // Fetch lại data nếu có lỗi
       fetchColors();
     }
   };

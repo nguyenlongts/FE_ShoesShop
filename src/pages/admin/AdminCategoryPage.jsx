@@ -103,42 +103,27 @@ const AdminCategoryPage = () => {
       toast.error("Không thể cập nhật danh mục");
     }
   };
-
-  // Toggle category status
-  const toggleCategoryStatus = async (categoryId) => {
+  const toggleCategoryStatus = async (Id) => {
     try {
-      const category = categories.find((c) => c.id === categoryId);
+      const category = categories.find((c) => c.cateID === Id);
       if (!category) return;
-
-      // Cập nhật UI trước
-      setCategories((prevCategories) =>
-        prevCategories.map((c) =>
-          c.id === categoryId ? { ...c, active: !c.active } : c
-        )
+      const response = await fetch(
+        `http://localhost:5258/api/Category/UpdateStatus?id=${Id}`,
+        {
+          method: "PUT",
+          headers,
+        }
       );
-
-      // Gọi API dựa vào trạng thái hiện tại
-      if (!category.active) {
-        // Nếu đang inactive thì gọi API moveOn để activate
-        await axios.post(
-          `http://localhost:8081/saleShoes/categories/moveon/${categoryId}`
-        );
-      } else {
-        // Nếu đang active thì gọi API delete để deactivate
-        await axios.delete(
-          `http://localhost:8081/saleShoes/categories/${categoryId}`
-        );
+      toast.success("Cập nhật trạng thái thành công");
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Lỗi khi cập nhật trạng thái:", errorData);
+        return;
       }
 
-      toast.success("Cập nhật trạng thái thành công");
-
-      // Fetch lại data sau khi cập nhật thành công
-      fetchCategories();
+      fetchCategories(); // Fetch lại dữ liệu sau khi cập nhật
     } catch (error) {
-      console.error("Error toggling category status:", error);
-      toast.error("Không thể cập nhật trạng thái");
-      // Fetch lại data nếu có lỗi để đồng bộ với DB
-      fetchCategories();
+      console.error("Lỗi khi gọi API:", error);
     }
   };
 
@@ -262,20 +247,20 @@ const AdminCategoryPage = () => {
                     .includes(searchQuery.trim().toLowerCase())
                 )
                 .map((category) => (
-                  <tr key={category.id} className="border-b">
+                  <tr key={category.cateID} className="border-b">
                     <td className="py-4">{category.id}</td>
                     <td className="py-4">{category.name}</td>
                     <td className="py-4">
                       <div className="flex justify-center">
                         <button
-                          onClick={() => toggleCategoryStatus(category.id)}
+                          onClick={() => toggleCategoryStatus(category.cateID)}
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                            category.active ? "bg-green-500" : "bg-gray-300"
+                            category.isActive ? "bg-green-500" : "bg-gray-300"
                           }`}
                         >
                           <span
                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              category.active
+                              category.isActive
                                 ? "translate-x-6"
                                 : "translate-x-1"
                             }`}
