@@ -79,17 +79,34 @@ const LoginPage = () => {
     }
   };
 
+  const decodeBase64UTF8 = (str) => {
+    try {
+      return new TextDecoder("utf-8").decode(
+        Uint8Array.from(atob(str), (c) => c.charCodeAt(0))
+      );
+    } catch (e) {
+      console.error("Lỗi giải mã UTF-8:", e);
+      return "";
+    }
+  };
   const handleSuccessfulLogin = (token, role, navigateTo) => {
+    const tokenParts = token.split(".");
+    const payload = JSON.parse(decodeBase64UTF8(tokenParts[1]));
+
     sessionStorage.setItem("token", token);
     sessionStorage.setItem(
       "user",
       JSON.stringify({
-        Username: formData.Username,
+        Username: payload.Username, // Lấy từ payload thay vì formData
         token,
-        sub: JSON.parse(atob(token.split(".")[1]))?.sub,
+        email: payload.Email,
+        phone: payload.Phone,
+        address: payload.Address,
+        sub: payload.sub, // Trực tiếp lấy từ payload
         role,
       })
     );
+
     toast.success("Đăng nhập thành công");
     console.log("Navigating to:", navigateTo);
     navigate(navigateTo);

@@ -10,40 +10,40 @@ const HomePage = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
+  const [pageSize, setPageSize] = useState(5);
+  const [totalPages, setTotalPages] = useState([]);
 
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   if (!token) {
-  //     navigate("/login");
-  //     return;
-  //   }
-  //   const userData = JSON.parse(localStorage.getItem("user") || "{}");
-
-  //   if (!userData || !userData.id) {
-  //     localStorage.removeItem("token");
-  //     navigate("/login");
-  //   }
-  // }, [navigate]);
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5258/api/Product/GetAllAdmin?pageSize=9&pageNum=1"
+      );
+      const productsData = response.data.products || [];
+      console.log(productsData);
+      setProducts(Array.isArray(productsData) ? productsData : []);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:8081/saleShoes/products"
-        );
-        const productsData = response.data?.result || [];
-        setProducts(Array.isArray(productsData) ? productsData : []);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProducts();
-  }, []);
-
+  }, [pageSize, pageNumber]);
+  const handlePageSizeChange = (e) => {
+    const newSize = parseInt(e.target.value, 10);
+    setPageSize(newSize);
+    setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
+  };
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPageNumber(newPage);
+      fetchBrands(newPage);
+    }
+  };
   const toggleSidebar = () => {
     setShowSidebar(!showSidebar);
   };
@@ -121,14 +121,14 @@ const HomePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {products.map((product) => (
                 <ProductCard
-                  key={product.id}
+                  key={product.productId}
                   product={{
-                    id: product.id,
+                    id: product.productId,
                     name: product.name,
-                    price: product.minPrice,
+                    price: product.basePrice,
                     description: product.description,
-                    category: product.category?.name,
-                    brand: product.brand?.name,
+                    category: product.categoryName,
+                    brand: product.brandName,
                     images: [product.imageUrl],
                   }}
                 />
@@ -139,6 +139,24 @@ const HomePage = () => {
               <p className="text-gray-500">Không có sản phẩm nào</p>
             </div>
           )}
+          {/* Pagination */}
+          <div className="flex justify-between items-center mt-6">
+            <button
+              onClick={() => handlePageChange(pageNumber - 1)}
+              disabled={pageNumber === 1}
+              className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
+            >
+              Prev
+            </button>
+            <span>Page {pageNumber}</span>
+            <button
+              onClick={() => handlePageChange(pageNumber + 1)}
+              disabled={pageNumber === totalPages}
+              className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>

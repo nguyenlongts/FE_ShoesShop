@@ -14,6 +14,7 @@ const AdminBrandPage = () => {
   });
   const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
   const [pageSize, setPageSize] = useState(5);
+  const [totalPages, setTotalPages] = useState([]);
   const token = sessionStorage.getItem("token");
   const headers = { Authorization: `Bearer ${token}` };
   // Fetch brands
@@ -27,7 +28,8 @@ const AdminBrandPage = () => {
       );
 
       if (response.data) {
-        setBrands(response.data);
+        setBrands(response.data.items);
+        setTotalPages(response.data.totalPages);
       }
     } catch (error) {
       toast.error("Không thể tải danh sách thương hiệu");
@@ -42,9 +44,13 @@ const AdminBrandPage = () => {
     setPageSize(newSize);
     setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
   };
-  const handlePageChange = (newPageNumber) => {
-    setPageNumber(newPageNumber);
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPageNumber(newPage);
+      fetchBrands(newPage);
+    }
   };
+
   // Create brand
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -332,6 +338,7 @@ const AdminBrandPage = () => {
         <span>Page {pageNumber}</span>
         <button
           onClick={() => handlePageChange(pageNumber + 1)}
+          disabled={pageNumber === totalPages}
           className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
         >
           Next

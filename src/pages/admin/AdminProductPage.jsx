@@ -23,7 +23,7 @@ const AdminProductPage = () => {
   const headers = { Authorization: `Bearer ${token}` };
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
-
+  const [totalPages, setTotalPages] = useState([]);
   // Fetch products
   const fetchProducts = async () => {
     try {
@@ -33,8 +33,10 @@ const AdminProductPage = () => {
           headers,
         }
       );
-      if (response.data) {
-        setProducts(response.data);
+
+      if (response.data.products) {
+        setProducts(response.data.products);
+        setTotalPages(response.data.totalPages);
       }
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -48,10 +50,13 @@ const AdminProductPage = () => {
   const handlePageSizeChange = (e) => {
     const newSize = parseInt(e.target.value, 10);
     setPageSize(newSize);
-    setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
+    setPageNumber(1);
   };
-  const handlePageChange = (newPageNumber) => {
-    setPageNumber(newPageNumber);
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPageNumber(newPage);
+      fetchProducts(newPage);
+    }
   };
 
   // Fetch brands and categories
@@ -65,8 +70,9 @@ const AdminProductPage = () => {
           "http://localhost:5258/api/Category/GetAll?pageSize=100&pageNum=1"
         ),
       ]);
-      setBrands(brandsRes.data || []);
-      setCategories(categoriesRes.data || []);
+
+      setBrands(brandsRes.data.items || []);
+      setCategories(categoriesRes.data.items || []);
     } catch (error) {
       console.error("Error fetching brands or categories:", error);
       toast.error("Không thể tải dữ liệu thương hiệu hoặc danh mục");
@@ -456,7 +462,7 @@ const AdminProductPage = () => {
                         <button
                           className="text-blue-600 hover:underline"
                           onClick={() =>
-                            navigate(`/admin/products/${product.id}`)
+                            navigate(`/admin/products/${product.productId}`)
                           }
                         >
                           Details
@@ -510,6 +516,7 @@ const AdminProductPage = () => {
         <span>Page {pageNumber}</span>
         <button
           onClick={() => handlePageChange(pageNumber + 1)}
+          disabled={pageNumber === totalPages}
           className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
         >
           Next

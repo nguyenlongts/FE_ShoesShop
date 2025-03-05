@@ -1,34 +1,55 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { toast } from 'react-hot-toast';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { toast } from "react-hot-toast";
 
 const AdminSizePage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [sizes, setSizes] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingSize, setEditingSize] = useState(null);
   const [formData, setFormData] = useState({
-    name: '',
-    active: true
+    name: "",
   });
 
-  // Fetch sizes
+  const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
+  const [pageSize, setPageSize] = useState(5);
+
+  const token = sessionStorage.getItem("token");
+  const headers = { Authorization: `Bearer ${token}` };
+  // Fetch Size
   const fetchSizes = async () => {
     try {
-      const response = await axios.get('http://localhost:8081/saleShoes/sizes/admin');
-      if (response.data?.result) {
-        setSizes(response.data.result);
+      // const token = localStorage.getItem("token"); // Lấy token từ localStorage
+      const response = await axios.get(
+        `http://localhost:5258/api/Size/GetAll?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+        {
+          headers,
+        }
+      );
+      if (response.data.items) {
+        setSizes(response.data.items);
       }
     } catch (error) {
-      console.error('Error fetching sizes:', error);
-      toast.error('Không thể tải danh sách kích thước');
+      console.error("Error fetching sizes:", error);
+      toast.error("Không thể tải danh sách kích thước");
     }
   };
 
   useEffect(() => {
     fetchSizes();
-  }, []);
+  }, [pageSize, pageNumber]);
+  const handlePageSizeChange = (e) => {
+    const newSize = parseInt(e.target.value, 10);
+    setPageSize(newSize);
+    setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
+  };
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPageNumber(newPage);
+      fetchSizes(newPage);
+    }
+  };
 
   // Create size
   const handleCreate = async (e) => {
@@ -36,42 +57,45 @@ const AdminSizePage = () => {
     try {
       try {
         // Kiểm tra xem màu sắc đã tồn tại hay chưa
-      const response = await axios.get(`http://localhost:8081/saleShoes/sizes/name?name=${formData.name}`);
-      if (response.data?.result) {
-        toast.error('Size đã tồn tại'); // Thông báo nếu màu sắc đã tồn tại
-        return; // Dừng lại nếu đã tồn tại
-      }
-      // Nếu chưa tồn tại, thực hiện tạo mới
-      await axios.post('http://localhost:8081/saleShoes/sizes', {
-        ...formData,
-        active: true
-      });
-      toast.success('Tạo kích thước thành công');
-      setShowCreateModal(false);
-      setFormData({ name: '', active: true });
-      fetchSizes();
+        const response = await axios.get(
+          `http://localhost:5258/api/Size/GetByName?name=${formData.name}`
+        );
+        if (response.data?.result) {
+          toast.error("Size đã tồn tại");
+          return; // Dừng lại nếu đã tồn tại
+        }
+        // Nếu chưa tồn tại, thực hiện tạo mới
+        await axios.post(
+          "http://localhost:5258/api/size/",
+          {
+            ...formData,
+            isActive: true,
+          },
+          { headers }
+        );
+        toast.success("Tạo kích thước thành công");
+        setShowCreateModal(false);
+        setFormData({ name: "", active: true });
+        fetchSizes();
       } catch (error) {
         if (error.response && error.response.status === 400) {
           // Size không tồn tại, tiếp tục tạo mới
-          await axios.post('http://localhost:8081/saleShoes/sizes', {
+          await axios.post("http://localhost:8081/saleShoes/sizes", {
             ...formData,
-            active: true
+            active: true,
           });
-          toast.success('Tạo kích thước thành công');
+          toast.success("Tạo kích thước thành công");
           setShowCreateModal(false);
-          setFormData({ name: '', active: true });
+          setFormData({ name: "", active: true });
           fetchSizes();
         } else {
           // Xử lý lỗi khác
           throw error;
         }
-        
       }
-
-      
     } catch (error) {
-      console.error('Error creating size:', error);
-      toast.error('Không thể tạo kích thước');
+      console.error("Error creating size:", error);
+      toast.error("Không thể tạo kích thước");
     }
   };
 
@@ -79,25 +103,28 @@ const AdminSizePage = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await axios.patch(`http://localhost:8081/saleShoes/sizes/${editingSize.id}`, {
-        ...formData,
-        active: editingSize.active
-      });
-      toast.success('Cập nhật kích thước thành công');
+      await axios.patch(
+        `http://localhost:8081/saleShoes/sizes/${editingSize.id}`,
+        {
+          ...formData,
+          active: editingSize.active,
+        }
+      );
+      toast.success("Cập nhật kích thước thành công");
       setShowEditModal(false);
       setEditingSize(null);
-      setFormData({ name: '', active: true });
+      setFormData({ name: "", active: true });
       fetchSizes();
     } catch (error) {
-      console.error('Error updating size:', error);
-      toast.error('Không thể cập nhật kích thước');
+      console.error("Error updating size:", error);
+      toast.error("Không thể cập nhật kích thước");
     }
   };
 
   // Toggle size status
   const toggleSizeStatus = async (sizeId) => {
     try {
-      const size = sizes.find(s => s.id === sizeId);
+      const size = sizes.find((s) => s.id === sizeId);
       if (!size) return;
 
       if (size.active) {
@@ -105,22 +132,24 @@ const AdminSizePage = () => {
         await axios.delete(`http://localhost:8081/saleShoes/sizes/${sizeId}`);
       } else {
         // Nếu đang inactive thì gọi API moveOn để activate
-        await axios.post(`http://localhost:8081/saleShoes/sizes/moveon/${sizeId}`);
+        await axios.post(
+          `http://localhost:8081/saleShoes/sizes/moveon/${sizeId}`
+        );
       }
 
       // Cập nhật state local
-      setSizes(sizes.map(s => 
-        s.id === sizeId 
-          ? { ...s, active: !s.active }
-          : s
-      ));
+      setSizes(
+        sizes.map((s) => (s.id === sizeId ? { ...s, active: !s.active } : s))
+      );
 
-      toast.success('Cập nhật trạng thái thành công');
+      toast.success("Cập nhật trạng thái thành công");
     } catch (error) {
-      console.error('Error toggling size status:', error);
-      console.log('Error details:', error.response?.data);
-      toast.error(error.response?.data?.message || 'Không thể cập nhật trạng thái');
-      
+      console.error("Error toggling size status:", error);
+      console.log("Error details:", error.response?.data);
+      toast.error(
+        error.response?.data?.message || "Không thể cập nhật trạng thái"
+      );
+
       // Fetch lại data nếu có lỗi
       fetchSizes();
     }
@@ -203,7 +232,7 @@ const AdminSizePage = () => {
         <div className="text-sm text-gray-500">
           View, create, update and manage
         </div>
-        <button 
+        <button
           onClick={() => setShowCreateModal(true)}
           className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800"
         >
@@ -240,47 +269,60 @@ const AdminSizePage = () => {
             </thead>
             <tbody>
               {sizes
-                .filter(size => 
-                  size.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
+                .filter((size) =>
+                  size.name
+                    .toLowerCase()
+                    .includes(searchQuery.trim().toLowerCase())
                 )
                 .map((size) => (
-                <tr key={size.id} className="border-b">
-                  <td className="py-4">{size.id}</td>
-                  <td className="py-4">{size.name}</td>
-                  <td className="py-4">
-                    <div className="flex justify-center">
-                      <button
-                        onClick={() => toggleSizeStatus(size.id)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                          size.active ? 'bg-green-500' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            size.active ? 'translate-x-6' : 'translate-x-1'
+                  <tr key={size.id} className="border-b">
+                    <td className="py-4">{size.sizeId}</td>
+                    <td className="py-4">{size.name}</td>
+                    <td className="py-4">
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => toggleSizeStatus(size.sizeId)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                            size.isActive ? "bg-green-500" : "bg-gray-300"
                           }`}
-                        />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="py-4">
-                    <div className="flex gap-2 justify-end">
-                      <button 
-                        className="p-1 hover:text-blue-600"
-                        onClick={() => {
-                          setEditingSize(size);
-                          setFormData({ name: size.name });
-                          setShowEditModal(true);
-                        }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              size.isActive ? "translate-x-6" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="py-4">
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          className="p-1 hover:text-blue-600"
+                          onClick={() => {
+                            setEditingSize(size);
+                            setFormData({ name: size.name });
+                            setShowEditModal(true);
+                          }}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            className="w-5 h-5"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -293,4 +335,4 @@ const AdminSizePage = () => {
   );
 };
 
-export default AdminSizePage; 
+export default AdminSizePage;

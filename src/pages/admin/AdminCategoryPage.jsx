@@ -12,6 +12,9 @@ const AdminCategoryPage = () => {
     Name: "",
     isActive: true,
   });
+  const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
+  const [pageSize, setPageSize] = useState(5);
+  const [totalPages, setTotalPages] = useState([]);
   const token = sessionStorage.getItem("token");
   const headers = { Authorization: `Bearer ${token}` };
   const fetchCategories = async () => {
@@ -23,7 +26,7 @@ const AdminCategoryPage = () => {
         }
       );
       if (response.data) {
-        setCategories(response.data);
+        setCategories(response.data.items);
       }
     } catch (error) {
       toast.error("Không thể tải danh sách danh mục");
@@ -43,7 +46,18 @@ const AdminCategoryPage = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [pageSize, pageNumber]);
+  const handlePageSizeChange = (e) => {
+    const newSize = parseInt(e.target.value, 10);
+    setPageSize(newSize);
+    setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
+  };
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPageNumber(newPage);
+      fetchBrands(newPage);
+    }
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -301,7 +315,24 @@ const AdminCategoryPage = () => {
           </table>
         </div>
       </div>
-
+      {/* Pagination */}
+      <div className="flex justify-between items-center mt-6">
+        <button
+          onClick={() => handlePageChange(pageNumber - 1)}
+          disabled={pageNumber === 1}
+          className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
+        >
+          Prev
+        </button>
+        <span>Page {pageNumber}</span>
+        <button
+          onClick={() => handlePageChange(pageNumber + 1)}
+          disabled={pageNumber === totalPages}
+          className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
+        >
+          Next
+        </button>
+      </div>
       {/* Modals */}
       {showCreateModal && <CreateModal />}
       {showEditModal && <EditModal />}
