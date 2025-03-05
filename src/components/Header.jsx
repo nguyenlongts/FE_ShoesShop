@@ -8,12 +8,10 @@ const Header = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    console.log(userData);
+    const userData = sessionStorage.getItem("user");
     if (userData) {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
-
       // Nếu không có thông tin đầy đủ, fetch lại từ API
       // if (!parsedUser.fullName) {
       //   const fetchUserInfo = async () => {
@@ -111,7 +109,7 @@ const Header = () => {
                         </svg>
                       </div>
                       <div>
-                        <p className="font-medium">{user.username}</p>
+                        <p className="font-medium">{user.Username}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
                       </div>
                     </div>
@@ -199,8 +197,8 @@ const Header = () => {
                     </Link>
                     <button
                       onClick={() => {
-                        localStorage.removeItem("token");
-                        localStorage.removeItem("user");
+                        sessionStorage.removeItem("token");
+                        sessionStorage.removeItem("user");
                         window.location.reload();
                       }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-gray-50 w-full"
