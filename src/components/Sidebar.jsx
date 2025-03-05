@@ -10,11 +10,11 @@ const Sidebar = () => {
     const fetchBrands = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5258/api/Brand/GetAll"
+          "http://localhost:5258/api/Brand/GetAll?pageNumber=1&pageSize=5"
         );
-        console.log(response);
+
         if (response.data) {
-          const activeBrands = response.data.filter(
+          const activeBrands = response.data.items.filter(
             (brand) => brand.isActive === true
           );
           setBrands(activeBrands);
@@ -27,11 +27,11 @@ const Sidebar = () => {
     const fetchSizes = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5258/api/Size/GetAll"
+          "http://localhost:5258/api/Size/GetAll?pageNumber=1&pageSize=5"
         );
-        if (response.data && response.data.result) {
-          const activeSizes = response.data.result.filter(
-            (size) => size.active
+        if (response.data) {
+          const activeSizes = response.data.items.filter(
+            (size) => size.isActive === true
           );
           setSizes(activeSizes);
         }
@@ -43,10 +43,10 @@ const Sidebar = () => {
     const fetchColors = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5258/api/Color/GetAll"
+          "http://localhost:5258/api/Color/GetAll?pageNumber=1&pageSize=5"
         );
         if (response.data) {
-          const activeColors = response.data.filter(
+          const activeColors = response.data.items.filter(
             (color) => color.isActive === true
           );
           setColors(activeColors);
@@ -111,7 +111,7 @@ const Sidebar = () => {
         <ul className="space-y-2">
           {sizes.length > 0 ? (
             sizes.map((size) => (
-              <li key={size.id}>
+              <li key={size.sizeId}>
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -138,7 +138,7 @@ const Sidebar = () => {
         <ul className="space-y-2">
           {brands.length > 0 ? (
             brands.map((brand) => (
-              <li key={brand.id}>
+              <li key={brand.brandID}>
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -161,7 +161,10 @@ const Sidebar = () => {
         <div className="grid grid-cols-4 gap-2">
           {colors.length > 0 ? (
             colors.map((color) => (
-              <div key={color.id} className="flex flex-col items-center gap-1">
+              <div
+                key={color.colorId}
+                className="flex flex-col items-center gap-1"
+              >
                 <button
                   className="w-8 h-8 rounded-full border border-gray-300 hover:border-black"
                   style={{ backgroundColor: color.colorCode }}
