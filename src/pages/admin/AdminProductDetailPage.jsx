@@ -17,7 +17,8 @@ const AdminProductDetailPage = () => {
   const token = sessionStorage.getItem("token");
   const headers = { Authorization: `Bearer ${token}` };
   const [existingVariants, setExistingVariants] = useState([]);
-
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   async function fetchProductDetails(productId) {
     try {
       const response = await axios.get(
@@ -32,27 +33,18 @@ const AdminProductDetailPage = () => {
   }
 
   useEffect(() => {
-    if (id) {
-      async function getProductDetails() {
-        const data = await fetchProductDetails(id);
-        if (data) {
-          setProductDetails(data);
-        }
-      }
-      getProductDetails(id);
-    }
-  }, [id]);
-  useEffect(() => {
-    async function fetchExistingVariants() {
+    async function getProductDetails() {
       const data = await fetchProductDetails(id);
       if (data) {
+        setProductDetails(data);
         setExistingVariants(data);
       }
     }
     if (id) {
-      fetchExistingVariants();
+      getProductDetails();
     }
   }, [id]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -267,7 +259,19 @@ const AdminProductDetailPage = () => {
       </div>
     );
   };
+  const handleFileChange = (event) => {
+    const files = Array.from(event.target.files);
 
+    if (files.length > 3) {
+      alert("Bạn chỉ có thể chọn tối đa 3 ảnh!");
+      return;
+    }
+
+    setSelectedFiles(files);
+
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setImagePreviews(previews);
+  };
   // Add Variant Modal Component
   const AddVariantModal = () => {
     const [variantForm, setVariantForm] = useState({
@@ -276,34 +280,33 @@ const AdminProductDetailPage = () => {
       selectedSizes: [],
       quantity: 1,
       price: 0,
-      imageUrls: [""],
+      images: [],
     });
 
     const handleAddImageField = () => {
-      if (variantForm.imageUrls.length < 3) {
+      if (variantForm.images.length < 3) {
         setVariantForm({
           ...variantForm,
-          imageUrls: [...variantForm.imageUrls, ""],
+          images: [...variantForm.images, null],
         });
       }
     };
     const handleImageUpload = (e, index) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const imageUrl = URL.createObjectURL(file); // Tạo URL tạm thời cho ảnh
-      setVariantForm((prev) => {
-        const newImageUrls = [...prev.imageUrls];
-        newImageUrls[index] = imageUrl;
-        return { ...prev, imageUrls: newImageUrls };
-      });
+      const files = e.target.files;
+      if (files.length > 0) {
+        setVariantForm((prev) => {
+          const newImages = [...prev.images];
+          newImages[index] = files[0];
+          return { ...prev, images: newImages };
+        });
+      }
     };
 
     const handleRemoveImageField = (index) => {
-      const newImageUrls = variantForm.imageUrls.filter((_, i) => i !== index);
+      const newImages = variantForm.images.filter((_, i) => i !== index);
       setVariantForm({
         ...variantForm,
-        imageUrls: newImageUrls,
+        images: newImages,
       });
     };
 
@@ -326,11 +329,10 @@ const AdminProductDetailPage = () => {
           : [...variantForm.selectedSizes, sizeId],
       });
     };
-
     const handleSubmit = async (e) => {
       e.preventDefault();
+
       try {
-        // Validate form data
         if (variantForm.selectedColors.length === 0) {
           toast.error("Vui lòng chọn ít nhất một màu sắc");
           return;
@@ -351,62 +353,44 @@ const AdminProductDetailPage = () => {
           return;
         }
 
-        const variants = [];
         for (const colorId of variantForm.selectedColors) {
           for (const sizeId of variantForm.selectedSizes) {
-            const selectedColor = colors.find(
-              (c) => c.colorId === parseInt(colorId)
-            );
+            const formData = new FormData();
 
-            const selectedSize = sizes.find(
-              (s) => s.sizeId === parseInt(sizeId)
-            );
-
-            const existingVariant = existingVariants.find(
-              (v) =>
-                v.colorId === selectedColor.colorId &&
-                v.sizeId === selectedSize.sizeId
-            );
-
-            if (!existingVariant) {
-              variants.push({
-                productId: parseInt(id),
-                colorID: selectedColor.colorId,
-                sizeID: selectedSize.sizeId,
-                quantity: parseInt(variantForm.quantity),
-                price: parseFloat(variantForm.price),
-                imageUrls: variantForm.imageUrls.filter(
-                  (url) => url.trim() !== ""
-                ),
+            formData.append("ProductId", id.toString());
+            formData.append("ColorID", colorId.toString()); // Single color
+            formData.append("SizeID", sizeId.toString()); // Single size
+            formData.append("Quantity", variantForm.quantity.toString());
+            formData.append("Price", variantForm.price.toString());
+            if (variantForm.images && variantForm.images.length > 0) {
+              variantForm.images.forEach((image) => {
+                formData.append("Images", image);
               });
-            } else {
-              toast.error(
-                `Biến thể ${selectedColor.name} - ${selectedSize.name} đã tồn tại`
-              );
             }
-          }
-        }
-        if (variants.length > 0) {
-          // Gửi request tạo các biến thể
-          for (const variant of variants) {
+
             await axios.post(
               "http://localhost:5258/api/ProductDetail",
-              variant,
+              formData,
               {
-                headers,
+                headers: {
+                  Accept: "*/*",
+                },
               }
             );
           }
-          toast.success("Thêm biến thể thành công");
-          const updatedData = await fetchProductDetails(id);
-          if (updatedData) {
-            setProductDetails(updatedData);
-          }
 
-          setShowAddModal(false);
+          // Send the request for this variant
+        }
+
+        toast.success("Thêm biến thể thành công");
+        setShowAddModal(false);
+        const updatedData = await fetchProductDetails(id);
+        if (updatedData) {
+          setProductDetails(updatedData);
+          setExistingVariants(updatedData);
         }
       } catch (error) {
-        console.error("Error creating variants:", error);
+        console.error("Lỗi khi thêm biến thể:", error);
         toast.error(
           "Không thể thêm biến thể: " +
             (error.response?.data?.message || error.message)
@@ -515,7 +499,7 @@ const AdminProductDetailPage = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Ảnh sản phẩm (tối đa 3 ảnh)
                 </label>
-                {variantForm.imageUrls.map((url, index) => (
+                {variantForm.images.map((image, index) => (
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="file"
@@ -523,9 +507,9 @@ const AdminProductDetailPage = () => {
                       onChange={(e) => handleImageUpload(e, index)}
                       className="border p-2 rounded-md"
                     />
-                    {url && (
+                    {variantForm.images[index] instanceof File && (
                       <img
-                        src={url}
+                        src={URL.createObjectURL(image)}
                         alt={`Ảnh ${index + 1}`}
                         className="w-20 h-20 object-cover rounded"
                       />
@@ -539,7 +523,7 @@ const AdminProductDetailPage = () => {
                     </button>
                   </div>
                 ))}
-                {variantForm.imageUrls.length < 3 && (
+                {variantForm.images.length < 3 && (
                   <button
                     type="button"
                     onClick={handleAddImageField}

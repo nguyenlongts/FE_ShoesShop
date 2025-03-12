@@ -444,14 +444,16 @@ const AdminProductPage = () => {
                     <td className="py-4">
                       <div className="flex justify-center">
                         <button
-                          onClick={() => toggleProductStatus(product.id)}
+                          onClick={() => toggleProductStatus(product.productId)}
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                            product.active ? "bg-green-500" : "bg-gray-300"
+                            product.isActive ? "bg-green-500" : "bg-gray-300"
                           }`}
                         >
                           <span
                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              product.active ? "translate-x-6" : "translate-x-1"
+                              product.isActive
+                                ? "translate-x-6"
+                                : "translate-x-1"
                             }`}
                           />
                         </button>

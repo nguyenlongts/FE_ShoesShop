@@ -12,12 +12,12 @@ const AdminColorPage = () => {
     colorId: null,
     name: "",
   });
+
   const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
   const [pageSize, setPageSize] = useState(5);
-
+  const [totalPages, setTotalPages] = useState([]);
   const token = sessionStorage.getItem("token");
   const headers = { Authorization: `Bearer ${token}` };
-  // Fetch colors
   const fetchColors = async () => {
     try {
       // const token = localStorage.getItem("token"); // Lấy token từ localStorage
@@ -28,7 +28,7 @@ const AdminColorPage = () => {
         }
       );
       if (response.data) {
-        setColors(response.data);
+        setColors(response.data.items);
       }
     } catch (error) {
       console.error("Error fetching colors:", error);
@@ -37,7 +37,18 @@ const AdminColorPage = () => {
   };
   useEffect(() => {
     fetchColors();
-  }, []);
+  }, [pageSize, pageNumber]);
+  const handlePageSizeChange = (e) => {
+    const newSize = parseInt(e.target.value, 10);
+    setPageSize(newSize);
+    setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
+  };
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPageNumber(newPage);
+      fetchColors(newPage);
+    }
+  };
 
   // Create color
   const handleCreate = async (e) => {
@@ -89,14 +100,6 @@ const AdminColorPage = () => {
         toast.error("Không thể kiểm tra màu sắc");
       }
     }
-  };
-  const handlePageSizeChange = (e) => {
-    const newSize = parseInt(e.target.value, 10);
-    setPageSize(newSize);
-    setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
-  };
-  const handlePageChange = (newPageNumber) => {
-    setPageNumber(newPageNumber);
   };
 
   const handleSearchChange = (e) => {
