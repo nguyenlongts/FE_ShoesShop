@@ -11,6 +11,7 @@ const CartPage = () => {
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedVouchers, setAppliedVouchers] = useState([]);
   const [voucherError, setVoucherError] = useState("");
+  const [maxQuantity, setMaxQuantity] = useState(null);
 
   // Tính tổng tiền trước khi áp dụng voucher
   const subtotal = cartItems.reduce(
@@ -26,30 +27,94 @@ const CartPage = () => {
 
   // Tính tổng tiền cuối cùng
   const total = Math.max(0, subtotal - totalDiscount);
-
   useEffect(() => {
-    // Load cart items from localStorage
-    const savedCart = localStorage.getItem("cart");
-    const user = JSON.parse(sessionStorage.getItem("user"));
+    const fetchCartItems = async () => {
+      try {
+        const user = sessionStorage.getItem("user"); // Đảm bảo tên key là chuỗi
+        const userId = user ? JSON.parse(user).sub : null;
 
-    if (savedCart && user) {
-      // Lọc chỉ lấy các item của user hiện tại
-      const allCartItems = JSON.parse(savedCart);
-      const userCartItems = allCartItems.filter(
-        (item) => item.userId === user.sub
-      );
-      setCartItems(userCartItems);
-    }
+        const response = await fetch(
+          `http://localhost:5258/api/Cart/GetAllCartItems?userId=${userId}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch cart items");
+        }
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setCartItems(data);
+        } else {
+          setCartItems([]);
+        }
+      } catch (error) {
+        console.error("Error fetching cart items:", error);
+      }
+    };
+
+    fetchCartItems();
   }, []);
+  // const GetMaxQuantity = (productDetailId) => {
+  //   const response = fetch(
+  //     `http://localhost:5258/api/ProductDetail/${productDetailId}`
+  //   );
+  //   const data = response.json();
+  //   console.log("Stock Quantity from API:", data.stockQuantity);
+  //   return data.stockQuantity;
+  // };
+  // useEffect(() => {
+  //   const fetchMaxQuantity = async () => {
+  //     const max = await GetMaxQuantity(productDetailId);
+  //     setMaxQuantity(max);
+  //   };
 
-  // Cập nhật số lượng sản phẩm
-  const updateQuantity = (itemIndex, newQuantity) => {
-    if (newQuantity < 1) return;
+  //   if (productDetailId) {
+  //     fetchMaxQuantity();
+  //   }
+  // }, [productDetailId]);
+  const updateQuantity = async (cartItemId, newQuantity) => {
+    try {
+      const user = sessionStorage.getItem("user");
+      const userId = user ? JSON.parse(user).sub : null; // Lấy userId từ sessionStorage
+      console.log(userId);
+      if (!userId) {
+        console.error("User not found in sessionStorage");
+        return;
+      }
 
-    const updatedCart = [...cartItems];
-    updatedCart[itemIndex].quantity = newQuantity;
-    setCartItems(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
+      const response = await fetch(
+        `http://localhost:5258/api/cart/UpdateQuantity/${cartItemId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: userId,
+            cartItemId: cartItemId,
+            quantity: newQuantity,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update quantity");
+      }
+
+      const result = await response.json();
+      console.log("Quantity updated:", result);
+
+      // Cập nhật giao diện giỏ hàng sau khi thành công (tuỳ vào framework bạn đang dùng)
+      // Ví dụ: setCartData(updatedCart);
+      setCartItems((prevCartItems) =>
+        prevCartItems.map((item) =>
+          item.cartItemId === cartItemId
+            ? { ...item, quantity: newQuantity }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
   };
 
   // Xóa sản phẩm khỏi giỏ hàng
@@ -108,10 +173,13 @@ const CartPage = () => {
   // Thêm hàm xử lý thanh toán
   const handleCheckout = () => {
     // Kiểm tra đăng nhập
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) {
+    const userString = sessionStorage.getItem("user");
+    const user = userString ? JSON.parse(userString) : null;
+    console.log("User sau khi parse:", user);
+
+    if (!user || Object.keys(user).length === 0) {
       toast.error("Vui lòng đăng nhập để thanh toán");
-      navigate("/signin", { state: { from: "/cart" } }); // Lưu trang trước khi chuyển đến đăng nhập
+      navigate("/signin", { state: { from: "/cart" } });
       return;
     }
 
@@ -120,9 +188,6 @@ const CartPage = () => {
       toast.error("Giỏ hàng trống");
       return;
     }
-
-    // Lưu thông tin giỏ hàng vào localStorage để checkout
-    localStorage.setItem("checkoutItems", JSON.stringify(cartItems));
     navigate("/checkout");
   };
 
@@ -152,12 +217,12 @@ const CartPage = () => {
             <div className="space-y-6">
               {cartItems.map((item, index) => (
                 <div
-                  key={`${item.productId}-${item.color}-${item.size}`}
+                  key={`${item.cartItemId}-${item.color}-${item.size}`}
                   className="flex gap-4 border-b pb-6"
                 >
                   <Link to={`/product/${item.productId}`} className="shrink-0">
                     <img
-                      src={item.image}
+                      src={`http://localhost:5258/Uploads/${item.imageUrl}`}
                       alt={item.name}
                       className="w-24 h-24 object-cover rounded"
                     />
@@ -185,17 +250,20 @@ const CartPage = () => {
                       <div className="flex items-center gap-4">
                         <button
                           onClick={() =>
-                            updateQuantity(index, item.quantity - 1)
+                            updateQuantity(item.cartItemId, item.quantity - 1)
                           }
+                          disabled={item.quantity <= 1}
                           className="p-1 hover:bg-gray-100 rounded"
                         >
                           -
                         </button>
                         <span>{item.quantity}</span>
+
                         <button
                           onClick={() =>
-                            updateQuantity(index, item.quantity + 1)
+                            updateQuantity(item.cartItemId, item.quantity + 1)
                           }
+                          disabled={item.quantity >= item.maxQuantity}
                           className="p-1 hover:bg-gray-100 rounded"
                         >
                           +

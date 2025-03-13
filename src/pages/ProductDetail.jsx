@@ -140,7 +140,7 @@ const ProductDetail = () => {
       const token = sessionStorage.getItem("token");
       if (!token) {
         toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng");
-        navigate("/signin", { state: { from: `/product/${productId}` } });
+        navigate("/signin", { state: { from: `/product/${id}` } });
         return;
       }
 
@@ -154,7 +154,6 @@ const ProductDetail = () => {
       }
 
       setLoading(true);
-      console.log(selectedVariant);
 
       const cartId = await getUserInfo();
       if (!cartId) {
@@ -177,7 +176,7 @@ const ProductDetail = () => {
 
       // Cập nhật giỏ hàng trên localStorage
       const cartItem = {
-        userId: user.sub,
+        userId: userId,
         productId: product.productId,
         variantId: selectedVariant.productDetailId,
         name: product.name,
@@ -221,7 +220,6 @@ const ProductDetail = () => {
 
       setLoading(true);
 
-      // Thêm vào giỏ hàng trước
       await addToCart();
 
       // Lưu thông tin đơn hàng tạm thời để sử dụng ở trang checkout
