@@ -17,10 +17,9 @@ const HomePage = () => {
   const fetchProducts = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5258/api/Product/GetAllAdmin?pageSize=9&pageNum=1"
+        `http://localhost:5258/api/Product/GetCustomerProduct?pageSize=9&$pageNum=${pageNumber}`
       );
       const productsData = response.data.products || [];
-      console.log(productsData);
       setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -33,11 +32,6 @@ const HomePage = () => {
   useEffect(() => {
     fetchProducts();
   }, [pageSize, pageNumber]);
-  const handlePageSizeChange = (e) => {
-    const newSize = parseInt(e.target.value, 10);
-    setPageSize(newSize);
-    setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
-  };
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setPageNumber(newPage);
@@ -129,7 +123,7 @@ const HomePage = () => {
                     description: product.description,
                     category: product.categoryName,
                     brand: product.brandName,
-                    images: [product.imageUrl],
+                    images: product.image,
                   }}
                 />
               ))}

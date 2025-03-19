@@ -1,52 +1,51 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const AdminOrderPage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [timeFilter, setTimeFilter] = useState('This week');
-  const [orders] = useState([
-    {
-      id: '4',
-      customer: {
-        name: 'Gray Response Super',
-        image: '/product-1.jpg'
-      },
-      address: 'Thanh Xuân, Hà Nội, Việt Nam',
-      amount: '$xx',
-      status: 'Đang giao hàng',
-    },
-    {
-      id: '3',
-      customer: {
-        name: 'Gray Response Super',
-        image: '/product-1.jpg'
-      },
-      address: 'Thanh Xuân, Hà Nội, Việt Nam',
-      amount: '$xx',
-      status: 'Đang giao hàng',
-    },
-    {
-      id: '2',
-      customer: {
-        name: 'Gray Response Super',
-        image: '/product-1.jpg'
-      },
-      address: 'Thanh Xuân, Hà Nội, Việt Nam',
-      amount: '$xx',
-      status: 'Đang giao hàng',
-    },
-    {
-      id: '1',
-      customer: {
-        name: 'Gray Response Super',
-        image: '/product-1.jpg'
-      },
-      address: 'Thanh Xuân, Hà Nội, Việt Nam',
-      amount: '$xx',
-      status: 'Đang giao hàng',
+  const [orders, setOrders] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [timeFilter, setTimeFilter] = useState("This week");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const getStatusText = (status) => {
+    switch (status) {
+      case 0:
+        return "Pending";
+      case 1:
+        return "Processing";
+      case 2:
+        return "Shipping";
+      case 3:
+        return "Completed";
+      case 4:
+        return "Cancelled";
+      default:
+        return "Unknown";
     }
-  ]);
+  };
 
+  // Fetch orders from API
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5258/api/orders?pageNum=1&pageSize=10"
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch orders");
+        }
+        const data = await response.json();
+        console.log(data);
+        setOrders(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -68,7 +67,7 @@ const AdminOrderPage = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-black"
               />
-              <select 
+              <select
                 value={timeFilter}
                 onChange={(e) => setTimeFilter(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-black"
@@ -78,7 +77,7 @@ const AdminOrderPage = () => {
                 <option>This month</option>
                 <option>Last month</option>
               </select>
-              <select 
+              <select
                 defaultValue="Anytime"
                 className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-black"
               >
@@ -95,54 +94,64 @@ const AdminOrderPage = () => {
       {/* Orders Table */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-4">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-4">ID</th>
-                <th className="text-left py-4">Customer / Products</th>
-                <th className="text-left py-4">Address</th>
-                <th className="text-left py-4">Amount</th>
-                <th className="text-left py-4">Status</th>
-                <th className="text-left py-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className="border-b">
-                  <td className="py-4">{order.id}</td>
-                  <td className="py-4">
-                    <div className="flex items-center gap-3">
-                      <img 
-                        src={order.customer.image} 
-                        alt={order.customer.name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                      <span>{order.customer.name}</span>
-                    </div>
-                  </td>
-                  <td className="py-4">{order.address}</td>
-                  <td className="py-4">{order.amount}</td>
-                  <td className="py-4">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="py-4">
-                    <Link 
-                      to={`/admin/orders/${order.id}`} 
-                      className="text-blue-600 hover:underline"
-                    >
-                      Details
-                    </Link>
-                  </td>
+          {loading ? (
+            <p>Loading...</p>
+          ) : error ? (
+            <p className="text-red-500">{error}</p>
+          ) : orders.length === 0 ? (
+            <p>No orders found</p>
+          ) : (
+            <table className="w-full">
+              <colgroup>
+                <col className="w-auto" />
+                <col className="w-1/4" />
+                <col className="w-1/4" />
+                <col className="w-1/4" />
+                <col className="w-1/4" />
+              </colgroup>
+              <thead>
+                <tr className="border-b">
+                  <th className="text-center py-3 whitespace-nowrap pr-4">
+                    ID
+                  </th>
+                  <th className="text-center py-4">Address</th>
+                  <th className="text-center py-4">Amount</th>
+                  <th className="text-center py-4">Status</th>
+                  <th className="text-center py-4">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.orderId} className="border-b">
+                    <td className="py-4 whitespace-nowrap pr-4 overflow-hidden text-ellipsis">
+                      {order.orderId}
+                    </td>
+                    <td className="py-4 text-center">
+                      {order.shippingAddress}
+                    </td>
+                    <td className="py-4 text-center">{order.totalPrice}</td>
+                    <td className="py-4 text-center">
+                      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                        {getStatusText(order.status)}
+                      </span>
+                    </td>
+                    <td className="py-4 text-center">
+                      <Link
+                        to={`/admin/orders/${order.orderId}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        Details
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default AdminOrderPage; 
+export default AdminOrderPage;

@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { toast } from 'react-hot-toast';
-import { getProvinces, getDistricts, getWards, calculateShippingFee } from '../services/addressApi';
-import { ORDER_STATUS } from '../data/orderStatus';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+import {
+  getProvinces,
+  getDistricts,
+  getWards,
+  calculateShippingFee,
+} from "../services/addressApi";
+import { ORDER_STATUS } from "../data/orderStatus";
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -13,82 +18,103 @@ const CheckoutPage = () => {
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
-  const [selectedProvince, setSelectedProvince] = useState('');
-  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
   const [shippingFee, setShippingFee] = useState(0);
   const [checkoutItems, setCheckoutItems] = useState([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState([]);
-
+  const token = sessionStorage.getItem("token");
+  const tokenParts = token.split(".");
+  const payload = JSON.parse(atob(tokenParts[1]));
   // Form state
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    district: '',
-    ward: '',
-    note: '',
-    paymentMethod: 'cod' // cod, banking, momo
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    district: "",
+    ward: "",
+    note: "",
+    paymentMethod: "cod", // cod, banking, momo
   });
 
-  // Tính toán giá tiền
-  const subtotal = cartItems.reduce((total, item) => 
-    total + (item.price * item.quantity), 0
+  const subtotal = cartItems.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
   );
   const total = subtotal + shippingFee;
 
   useEffect(() => {
-    // Load cart items
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    }
+    const fetchCartItems = async () => {
+      try {
+        const userId = payload?.sub;
+        if (!userId) {
+          console.error("Lỗi: userId không hợp lệ");
+          return;
+        }
+        const response = await axios.get(
+          `http://localhost:5258/api/Cart/GetAllCartItems?userId=${userId}`
+        );
 
+        console.log(response.data); // Kiểm tra data trả về
+        setCartItems(response.data);
+        console.log(cartItems);
+      } catch (error) {
+        console.error("Lỗi khi tải giỏ hàng:", error);
+      }
+    };
+    fetchCartItems();
     // Load applied vouchers
-    const savedVouchers = localStorage.getItem('appliedVouchers');
+    const savedVouchers = localStorage.getItem("appliedVouchers");
     if (savedVouchers) {
       setAppliedVouchers(JSON.parse(savedVouchers));
     }
 
-    // Load user info and saved addresses
+    //Load user info and saved addresses
     const loadUserInfo = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user'));
-        
+        const token = sessionStorage.getItem("token");
+        const user = JSON.parse(sessionStorage.getItem("user"));
+        console.log(user.sub);
         if (!token || !user) {
-          toast.error('Vui lòng đăng nhập để tiếp tục');
-          navigate('/signin');
+          toast.error("Vui lòng đăng nhập để tiếp tục");
+          navigate("/signin");
           return;
         }
 
         // Lấy thông tin user
-        const userResponse = await axios.get('http://localhost:8081/saleShoes/users/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (userResponse.data?.result) {
-          setFormData(prev => ({
+        const userResponse = await axios.get(
+          `http://localhost:5258/api/User/UserInfo/${user.sub}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log(userResponse);
+        if (userResponse.data) {
+          setFormData((prev) => ({
             ...prev,
-            fullName: userResponse.data.result.fullName || '',
-            email: userResponse.data.result.email || '',
-            phone: userResponse.data.result.phone || ''
+            fullName: userResponse.data.fullName || "",
+            email: userResponse.data.email || "",
+            phone: userResponse.data.phone || "",
           }));
 
           // Lấy danh sách địa chỉ đã lưu
-          const addressesResponse = await axios.get(`http://localhost:8081/saleShoes/addresses/user/${user.id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          const addressesResponse = await axios.get(
+            `http://localhost:8081/saleShoes/addresses/user/${user.id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
 
           if (addressesResponse.data?.result) {
             setSavedAddresses(addressesResponse.data.result);
           }
         }
       } catch (error) {
-        console.error('Error loading user info:', error);
-        toast.error('Không thể tải thông tin người dùng');
+        console.error("Error loading user info:", error);
+        toast.error("Không thể tải thông tin người dùng");
       }
     };
 
@@ -102,26 +128,24 @@ const CheckoutPage = () => {
         const data = await getProvinces();
         setProvinces(data);
       } catch (error) {
-        toast.error('Không thể tải danh sách tỉnh thành');
+        toast.error("Không thể tải danh sách tỉnh thành");
       }
     };
     loadProvinces();
   }, []);
 
-  // Load quận/huyện khi chọn tỉnh/thành
   useEffect(() => {
     const loadDistricts = async () => {
       if (selectedProvince) {
         try {
           const data = await getDistricts(selectedProvince);
           setDistricts(data);
-          setSelectedDistrict('');
+          setSelectedDistrict("");
           setWards([]);
-          // Tính phí ship
           const fee = calculateShippingFee(selectedProvince);
           setShippingFee(fee);
         } catch (error) {
-          toast.error('Không thể tải danh sách quận huyện');
+          toast.error("Không thể tải danh sách quận huyện");
         }
       }
     };
@@ -136,7 +160,7 @@ const CheckoutPage = () => {
           const data = await getWards(selectedDistrict);
           setWards(data);
         } catch (error) {
-          toast.error('Không thể tải danh sách phường xã');
+          toast.error("Không thể tải danh sách phường xã");
         }
       }
     };
@@ -145,12 +169,12 @@ const CheckoutPage = () => {
 
   useEffect(() => {
     // Load checkout items
-    const savedCheckoutItems = localStorage.getItem('checkoutItems');
+    const savedCheckoutItems = localStorage.getItem("checkoutItems");
     if (savedCheckoutItems) {
       setCheckoutItems(JSON.parse(savedCheckoutItems));
     } else {
       // Nếu không có checkoutItems, lấy từ cart
-      const savedCart = localStorage.getItem('cart');
+      const savedCart = localStorage.getItem("cart");
       if (savedCart) {
         setCheckoutItems(JSON.parse(savedCart));
       }
@@ -159,9 +183,9 @@ const CheckoutPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -169,34 +193,37 @@ const CheckoutPage = () => {
   const handleSavedAddressSelect = async (address) => {
     try {
       // Lấy chi tiết địa chỉ
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:8081/saleShoes/addresses/${address.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `http://localhost:8081/saleShoes/addresses/${address.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.data?.result) {
         const addressDetail = response.data.result;
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           address: addressDetail.address,
           city: addressDetail.province,
           district: addressDetail.district,
-          ward: addressDetail.ward
+          ward: addressDetail.ward,
         }));
         setSelectedProvince(addressDetail.provinceCode);
         setSelectedDistrict(addressDetail.districtCode);
       }
     } catch (error) {
-      console.error('Error loading address details:', error);
-      toast.error('Không thể tải thông tin địa chỉ');
+      console.error("Error loading address details:", error);
+      toast.error("Không thể tải thông tin địa chỉ");
     }
   };
 
   // Lưu địa chỉ mới
   const saveNewAddress = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const user = JSON.parse(localStorage.getItem('user'));
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user"));
 
       const addressData = {
         userId: user.id,
@@ -204,62 +231,66 @@ const CheckoutPage = () => {
         provinceCode: selectedProvince,
         districtCode: selectedDistrict,
         wardCode: formData.wardCode,
-        isDefault: savedAddresses.length === 0 // Nếu là địa chỉ đầu tiên thì set làm mặc định
+        isDefault: savedAddresses.length === 0,
       };
 
-      await axios.post('http://localhost:8081/saleShoes/addresses', addressData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.post(
+        "http://localhost:8081/saleShoes/addresses",
+        addressData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      toast.success('Đã lưu địa chỉ mới');
+      toast.success("Đã lưu địa chỉ mới");
     } catch (error) {
-      console.error('Error saving address:', error);
-      toast.error('Không thể lưu địa chỉ');
+      console.error("Error saving address:", error);
+      toast.error("Không thể lưu địa chỉ");
     }
   };
 
   const validateForm = () => {
     // Kiểm tra các trường bắt buộc
     if (!formData.fullName) {
-      toast.error('Vui lòng nhập họ tên');
+      toast.error("Vui lòng nhập họ tên");
       return false;
     }
     if (!formData.email) {
-      toast.error('Vui lòng nhập email');
+      toast.error("Vui lòng nhập email");
       return false;
     }
     if (!formData.phone) {
-      toast.error('Vui lòng nhập số điện thoại');
+      toast.error("Vui lòng nhập số điện thoại");
       return false;
     }
     if (!formData.address) {
-      toast.error('Vui lòng nhập địa chỉ');
+      toast.error("Vui lòng nhập địa chỉ");
       return false;
     }
     if (!selectedProvince) {
-      toast.error('Vui lòng chọn Tỉnh/Thành');
+      toast.error("Vui lòng chọn Tỉnh/Thành");
       return false;
     }
     if (!selectedDistrict) {
-      toast.error('Vui lòng chọn Quận/Huyện');
+      toast.error("Vui lòng chọn Quận/Huyện");
       return false;
     }
     if (!formData.ward) {
-      toast.error('Vui lòng chọn Phường/Xã');
+      toast.error("Vui lòng chọn Phường/Xã");
       return false;
     }
 
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      toast.error('Email không hợp lệ');
+      toast.error("Email không hợp lệ");
       return false;
     }
 
     // Validate phone
     const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
     if (!phoneRegex.test(formData.phone)) {
-      toast.error('Số điện thoại không hợp lệ');
+      toast.error("Số điện thoại không hợp lệ");
       return false;
     }
 
@@ -273,7 +304,7 @@ const CheckoutPage = () => {
         <h3 className="text-lg font-medium mb-4">Xác nhận đặt hàng</h3>
         <p className="text-gray-600 mb-6">
           Bạn có chắc chắn muốn đặt đơn hàng này?
-          {formData.paymentMethod === 'banking' && (
+          {formData.paymentMethod === "banking" && (
             <span className="block mt-2 text-sm">
               Bạn sẽ được chuyển đến trang thanh toán sau khi xác nhận.
             </span>
@@ -309,35 +340,45 @@ const CheckoutPage = () => {
         address: `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`,
         provinceCode: selectedProvince,
         districtCode: selectedDistrict,
-        wardCode: formData.ward
+        wardCode: formData.ward,
       };
 
       // Gọi API tạo đơn hàng
-      const response = await axios.post('http://localhost:8081/saleShoes/orders', orderData);
+      const response = await axios.post(
+        "http://localhost:8081/saleShoes/orders",
+        orderData
+      );
 
       if (response.data?.result) {
         // Lưu địa chỉ mới
-        await axios.post('http://localhost:8081/saleShoes/users/addresses', {
-          address:`${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`,
-          provinceCode: selectedProvince,
-          districtCode: selectedDistrict,
-          wardCode: formData.ward
-        }, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+        await axios.post(
+          "http://localhost:8081/saleShoes/users/addresses",
+          {
+            address: `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`,
+            provinceCode: selectedProvince,
+            districtCode: selectedDistrict,
+            wardCode: formData.ward,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
           }
-        });
+        );
 
         // Xóa giỏ hàng sau khi đặt hàng thành công
-        localStorage.removeItem('cart');
-        localStorage.removeItem('checkoutItems');
+        localStorage.removeItem("cart");
+        localStorage.removeItem("checkoutItems");
 
         // Nếu thanh toán bằng banking, chuyển đến trang thanh toán
-        if (formData.paymentMethod === 'banking') {
-          const paymentResponse = await axios.post('http://localhost:8081/saleShoes/payments/createPayment', {
-            orderId: response.data.result.id
-          });
-          
+        if (formData.paymentMethod === "banking") {
+          const paymentResponse = await axios.post(
+            "http://localhost:8081/saleShoes/payments/createPayment",
+            {
+              orderId: response.data.result.id,
+            }
+          );
+
           if (paymentResponse.data?.paymentUrl) {
             window.location.href = paymentResponse.data.paymentUrl;
             return;
@@ -346,11 +387,11 @@ const CheckoutPage = () => {
 
         // Chuyển đến trang thành công
         navigate(`/order-success/${response.data.result.id}`);
-        toast.success('Đặt hàng thành công!');
+        toast.success("Đặt hàng thành công!");
       }
     } catch (error) {
-      console.error('Error placing order:', error);
-      toast.error('Có lỗi xảy ra khi đặt hàng');
+      console.error("Error placing order:", error);
+      toast.error("Có lỗi xảy ra khi đặt hàng");
     } finally {
       setLoading(false);
       setShowConfirmModal(false);
@@ -363,7 +404,7 @@ const CheckoutPage = () => {
     if (!validateForm()) return;
 
     // Hỏi người dùng có muốn lưu địa chỉ mới không
-    if (window.confirm('Bạn có muốn lưu địa chỉ này cho lần sau không?')) {
+    if (window.confirm("Bạn có muốn lưu địa chỉ này cho lần sau không?")) {
       await saveNewAddress();
     }
 
@@ -379,7 +420,9 @@ const CheckoutPage = () => {
         <div>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <h2 className="text-xl font-semibold mb-4">Thông tin giao hàng</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                Thông tin giao hàng
+              </h2>
 
               {/* Saved Addresses Section */}
               {savedAddresses.length > 0 && (
@@ -397,7 +440,9 @@ const CheckoutPage = () => {
                           {address.ward}, {address.district}, {address.province}
                         </p>
                         {address.isDefault && (
-                          <span className="text-xs text-green-600">Mặc định</span>
+                          <span className="text-xs text-green-600">
+                            Mặc định
+                          </span>
                         )}
                       </div>
                     ))}
@@ -464,7 +509,7 @@ const CheckoutPage = () => {
                       className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                     >
                       <option value="">Chọn Tỉnh/Thành</option>
-                      {provinces.map(province => (
+                      {provinces.map((province) => (
                         <option key={province.code} value={province.code}>
                           {province.name}
                         </option>
@@ -481,7 +526,7 @@ const CheckoutPage = () => {
                       disabled={!selectedProvince}
                     >
                       <option value="">Chọn Quận/Huyện</option>
-                      {districts.map(district => (
+                      {districts.map((district) => (
                         <option key={district.code} value={district.code}>
                           {district.name}
                         </option>
@@ -498,7 +543,7 @@ const CheckoutPage = () => {
                       disabled={!selectedDistrict}
                     >
                       <option value="">Chọn Phường/Xã</option>
-                      {wards.map(ward => (
+                      {wards.map((ward) => (
                         <option key={ward.code} value={ward.code}>
                           {ward.name}
                         </option>
@@ -521,14 +566,16 @@ const CheckoutPage = () => {
             </div>
 
             <div>
-              <h2 className="text-xl font-semibold mb-4">Phương thức thanh toán</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                Phương thức thanh toán
+              </h2>
               <div className="space-y-3">
                 <label className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer">
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="cod"
-                    checked={formData.paymentMethod === 'cod'}
+                    checked={formData.paymentMethod === "cod"}
                     onChange={handleInputChange}
                   />
                   <span>Thanh toán khi nhận hàng (COD)</span>
@@ -539,7 +586,7 @@ const CheckoutPage = () => {
                     type="radio"
                     name="paymentMethod"
                     value="banking"
-                    checked={formData.paymentMethod === 'banking'}
+                    checked={formData.paymentMethod === "banking"}
                     onChange={handleInputChange}
                   />
                   <span>Chuyển khoản ngân hàng</span>
@@ -550,7 +597,7 @@ const CheckoutPage = () => {
                     type="radio"
                     name="paymentMethod"
                     value="momo"
-                    checked={formData.paymentMethod === 'momo'}
+                    checked={formData.paymentMethod === "momo"}
                     onChange={handleInputChange}
                   />
                   <span>Ví MoMo</span>
@@ -562,11 +609,13 @@ const CheckoutPage = () => {
               type="submit"
               disabled={loading}
               className={`w-full py-4 rounded-full text-white
-                ${loading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-black hover:bg-gray-800'}`}
+                ${
+                  loading
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-black hover:bg-gray-800"
+                }`}
             >
-              {loading ? 'Đang xử lý...' : 'Đặt hàng'}
+              {loading ? "Đang xử lý..." : "Đặt hàng"}
             </button>
           </form>
         </div>
@@ -575,14 +624,16 @@ const CheckoutPage = () => {
         <div>
           <div className="bg-gray-50 p-6 rounded-lg">
             <h2 className="text-xl font-semibold mb-4">Đơn hàng của bạn</h2>
-            
+
             {/* Cart Items */}
             <div className="space-y-4 mb-6">
               {cartItems.map((item) => (
-                <div key={`${item.productId}-${item.color}-${item.size}`} 
-                     className="flex gap-4">
+                <div
+                  key={`${item.productId}-${item.color}-${item.size}`}
+                  className="flex gap-4"
+                >
                   <img
-                    src={item.image}
+                    src={`http://localhost:5258/Uploads/${item.imageUrl}`}
                     alt={item.name}
                     className="w-20 h-20 object-cover rounded"
                   />
@@ -592,7 +643,7 @@ const CheckoutPage = () => {
                       {item.color} | Size {item.size} | SL: {item.quantity}
                     </p>
                     <p className="font-medium">
-                      {(item.price * item.quantity).toLocaleString('vi-VN')}₫
+                      {(item.price * item.quantity).toLocaleString("vi-VN")}₫
                     </p>
                   </div>
                 </div>
@@ -603,15 +654,15 @@ const CheckoutPage = () => {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Tạm tính</span>
-                <span>{subtotal.toLocaleString('vi-VN')}₫</span>
+                <span>{subtotal.toLocaleString("vi-VN")}₫</span>
               </div>
               <div className="flex justify-between">
                 <span>Phí vận chuyển</span>
-                <span>{shippingFee.toLocaleString('vi-VN')}₫</span>
+                <span>{shippingFee.toLocaleString("vi-VN")}₫</span>
               </div>
               <div className="flex justify-between font-medium text-lg pt-2 border-t">
                 <span>Tổng cộng</span>
-                <span>{total.toLocaleString('vi-VN')}₫</span>
+                <span>{total.toLocaleString("vi-VN")}₫</span>
               </div>
             </div>
           </div>

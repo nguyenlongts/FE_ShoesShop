@@ -288,7 +288,7 @@ const CartPage = () => {
               <div>
                 <p>Want to view your favourites?</p>
                 <div className="flex gap-2 mt-2">
-                  <Link to="/join" className="underline">
+                  <Link to="/register" className="underline">
                     Join us
                   </Link>
                   <span>or</span>

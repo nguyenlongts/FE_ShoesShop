@@ -293,12 +293,16 @@ const Header = () => {
       </div>
 
       {/* Announcement bar */}
-      <div className="bg-gray-100 px-8 py-3 flex justify-center items-center">
-        <p className="text-sm">FREE STANDARD DELIVERY & 30-DAY FREE RETURNS</p>
-        <Link to="/join" className="ml-2 text-sm underline">
-          Join Now
-        </Link>
-      </div>
+      {!user ? (
+        <div className="bg-gray-100 px-8 py-3 flex justify-center items-center">
+          <p className="text-sm">
+            FREE STANDARD DELIVERY & 30-DAY FREE RETURNS
+          </p>
+          <Link to="/register" className="ml-2 text-sm underline">
+            Join Now
+          </Link>
+        </div>
+      ) : null}
     </header>
   );
 };

@@ -204,8 +204,8 @@ const ProductDetail = () => {
       localStorage.setItem("cart", JSON.stringify(updatedCart));
       toast.success("Đã thêm vào giỏ hàng");
     } catch (error) {
-      console.error("Lỗi khi thêm vào giỏ hàng:", error);
-      toast.error(error.message || "Không thể thêm vào giỏ hàng");
+      //console.error("Lỗi khi thêm vào giỏ hàng:", error);
+      toast.error("Không thể thêm vào giỏ hàng");
     } finally {
       setLoading(false);
     }

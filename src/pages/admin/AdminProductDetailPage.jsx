@@ -276,69 +276,72 @@ const AdminProductDetailPage = () => {
   const AddVariantModal = () => {
     const [variantForm, setVariantForm] = useState({
       productId: id,
-      selectedColors: [],
-      selectedSizes: [],
+      selectedColor: null,
+      selectedSize: null,
       quantity: 1,
       price: 0,
-      images: [],
+      image: null,
     });
 
-    const handleAddImageField = () => {
-      if (variantForm.images.length < 3) {
-        setVariantForm({
-          ...variantForm,
-          images: [...variantForm.images, null],
-        });
-      }
-    };
+    // const handleAddImageField = () => {
+    //   if (variantForm.image.length < 3) {
+    //     setVariantForm({
+    //       ...variantForm,
+    //       images: [...variantForm.image, null],
+    //     });
+    //   }
+    // };
     const handleImageUpload = (e, index) => {
-      const files = e.target.files;
-      if (files.length > 0) {
-        setVariantForm((prev) => {
-          const newImages = [...prev.images];
-          newImages[index] = files[0];
-          return { ...prev, images: newImages };
-        });
+      const file = e.target.files[0];
+      if (file) {
+        setVariantForm((prev) => ({ ...prev, image: file }));
       }
     };
 
-    const handleRemoveImageField = (index) => {
-      const newImages = variantForm.images.filter((_, i) => i !== index);
-      setVariantForm({
-        ...variantForm,
-        images: newImages,
-      });
-    };
+    // const handleRemoveImageField = (index) => {
+    //   const newImages = variantForm.image.filter((_, i) => i !== index);
+    //   setVariantForm({
+    //     ...variantForm,
+    //     image: newImages,
+    //   });
+    // };
 
     const handleColorChange = (colorId) => {
-      const isSelected = variantForm.selectedColors.includes(colorId);
-      setVariantForm({
-        ...variantForm,
-        selectedColors: isSelected
-          ? variantForm.selectedColors.filter((id) => id !== colorId)
-          : [...variantForm.selectedColors, colorId],
-      });
+      setVariantForm((prev) => ({
+        ...prev,
+        selectedColor: prev.selectedColor === colorId ? null : colorId,
+      }));
     };
 
     const handleSizeChange = (sizeId) => {
-      const isSelected = variantForm.selectedSizes.includes(sizeId);
-      setVariantForm({
-        ...variantForm,
-        selectedSizes: isSelected
-          ? variantForm.selectedSizes.filter((id) => id !== sizeId)
-          : [...variantForm.selectedSizes, sizeId],
-      });
+      setVariantForm((prev) => ({
+        ...prev,
+        selectedSize: prev.selectedSize === sizeId ? null : sizeId,
+      }));
     };
+    // const handleColorChange = (colorId) => {
+    //   setVariantForm((prev) => ({
+    //     ...prev,
+    //     selectedColor: prev.selectedColors === colorId ? null : colorId,
+    //   }));
+    // };
+
+    // const handleSizeChange = (sizeId) => {
+    //   setVariantForm((prev) => ({
+    //     ...prev,
+    //     selectedSize: prev.selectedSizes === sizeId ? null : sizeId,
+    //   }));
+    // };
     const handleSubmit = async (e) => {
       e.preventDefault();
 
       try {
-        if (variantForm.selectedColors.length === 0) {
+        if (!variantForm.selectedColor) {
           toast.error("Vui lòng chọn ít nhất một màu sắc");
           return;
         }
 
-        if (variantForm.selectedSizes.length === 0) {
+        if (!variantForm.selectedSize) {
           toast.error("Vui lòng chọn ít nhất một kích thước");
           return;
         }
@@ -353,34 +356,21 @@ const AdminProductDetailPage = () => {
           return;
         }
 
-        for (const colorId of variantForm.selectedColors) {
-          for (const sizeId of variantForm.selectedSizes) {
-            const formData = new FormData();
-
-            formData.append("ProductId", id.toString());
-            formData.append("ColorID", colorId.toString()); // Single color
-            formData.append("SizeID", sizeId.toString()); // Single size
-            formData.append("Quantity", variantForm.quantity.toString());
-            formData.append("Price", variantForm.price.toString());
-            if (variantForm.images && variantForm.images.length > 0) {
-              variantForm.images.forEach((image) => {
-                formData.append("Images", image);
-              });
-            }
-
-            await axios.post(
-              "http://localhost:5258/api/ProductDetail",
-              formData,
-              {
-                headers: {
-                  Accept: "*/*",
-                },
-              }
-            );
-          }
-
-          // Send the request for this variant
+        const formData = new FormData();
+        formData.append("ProductId", id.toString());
+        formData.append("ColorID", variantForm.selectedColor.toString()); // Single color
+        formData.append("SizeID", variantForm.selectedSize.toString()); // Single size
+        formData.append("Quantity", variantForm.quantity.toString());
+        formData.append("Price", variantForm.price.toString());
+        if (variantForm.image) {
+          formData.append("Image", variantForm.image);
         }
+        console.log(formData);
+        await axios.post("http://localhost:5258/api/ProductDetail", formData, {
+          headers: {
+            Accept: "*/*",
+          },
+        });
 
         toast.success("Thêm biến thể thành công");
         setShowAddModal(false);
@@ -404,25 +394,27 @@ const AdminProductDetailPage = () => {
           <h2 className="text-xl font-bold mb-4">Thêm biến thể mới</h2>
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
+              {/* Chọn Màu Sắc */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Màu sắc (có thể chọn nhiều)
+                  Màu sắc (chỉ chọn một)
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {colors.map((color) => (
                     <label
                       key={color.colorId}
-                      className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
+                      className={`flex items-center space-x-2 p-2 border rounded cursor-pointer ${
+                        variantForm.selectedColor === color.colorId
+                          ? "bg-blue-200"
+                          : "hover:bg-gray-50"
+                      }`}
                     >
                       <input
-                        type="checkbox"
-                        checked={variantForm.selectedColors.includes(
-                          color.colorId.toString()
-                        )}
-                        onChange={() =>
-                          handleColorChange(color.colorId.toString())
-                        }
-                        className="rounded border-gray-300"
+                        type="radio"
+                        name="color"
+                        checked={variantForm.selectedColor === color.colorId}
+                        onChange={() => handleColorChange(color.colorId)}
+                        className="hidden"
                       />
                       <span className="text-sm">{color.name}</span>
                     </label>
@@ -430,25 +422,27 @@ const AdminProductDetailPage = () => {
                 </div>
               </div>
 
+              {/* Chọn Kích Thước */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Kích thước (có thể chọn nhiều)
+                  Kích thước (chỉ chọn một)
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {sizes.map((size) => (
                     <label
                       key={size.sizeId}
-                      className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
+                      className={`flex items-center space-x-2 p-2 border rounded cursor-pointer ${
+                        variantForm.selectedSize === size.sizeId
+                          ? "bg-blue-200"
+                          : "hover:bg-gray-50"
+                      }`}
                     >
                       <input
-                        type="checkbox"
-                        checked={variantForm.selectedSizes.includes(
-                          size.sizeId.toString()
-                        )}
-                        onChange={() =>
-                          handleSizeChange(size.sizeId.toString())
-                        }
-                        className="rounded border-gray-300"
+                        type="radio"
+                        name="size"
+                        checked={variantForm.selectedSize === size.sizeId}
+                        onChange={() => handleSizeChange(size.sizeId)}
+                        className="hidden"
                       />
                       <span className="text-sm">{size.name}</span>
                     </label>
@@ -456,6 +450,7 @@ const AdminProductDetailPage = () => {
                 </div>
               </div>
 
+              {/* Nhập Số Lượng và Giá */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -495,46 +490,39 @@ const AdminProductDetailPage = () => {
                 </div>
               </div>
 
+              {/* Upload Ảnh */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ảnh sản phẩm (tối đa 3 ảnh)
+                  Ảnh sản phẩm (chỉ chọn một)
                 </label>
-                {variantForm.images.map((image, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, index)}
-                      className="border p-2 rounded-md"
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="border p-2 rounded-md w-full"
+                />
+                {variantForm.image && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <img
+                      src={URL.createObjectURL(variantForm.image)}
+                      alt="Ảnh sản phẩm"
+                      className="w-20 h-20 object-cover rounded"
                     />
-                    {variantForm.images[index] instanceof File && (
-                      <img
-                        src={URL.createObjectURL(image)}
-                        alt={`Ảnh ${index + 1}`}
-                        className="w-20 h-20 object-cover rounded"
-                      />
-                    )}
                     <button
                       type="button"
-                      onClick={() => handleRemoveImageField(index)}
+                      onClick={() =>
+                        setVariantForm({ ...variantForm, image: null })
+                      }
                       className="text-red-600 hover:text-red-800"
                     >
                       Xóa
                     </button>
                   </div>
-                ))}
-                {variantForm.images.length < 3 && (
-                  <button
-                    type="button"
-                    onClick={handleAddImageField}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    + Thêm ảnh
-                  </button>
                 )}
               </div>
             </div>
 
+            {/* Nút hành động */}
             <div className="flex justify-end gap-2 mt-6">
               <button
                 type="button"
