@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+im;
 import HomePage from "./pages/HomePage";
 import ProductDetail from "./pages/ProductDetail";
 import CartPage from "./pages/CartPage";
-
 import OrderDetail from "./pages/OrderDetail";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -32,11 +32,9 @@ const ProtectedRoute = ({ children }) => {
   const userStr = sessionStorage.getItem("user");
 
   if (!token || !userStr) {
-    // Chặn và chuyển hướng tới trang đăng nhập
     return <Navigate to="/signin" replace />;
   }
 
-  // Nếu có token, render children
   return children;
 };
 function App() {

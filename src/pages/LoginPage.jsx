@@ -4,8 +4,6 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { jwtDecode } from "jwt-decode";
 const API_URL = import.meta.env.VITE_API_URL;
-
-console.log(API_URL);
 const LoginPage = () => {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
