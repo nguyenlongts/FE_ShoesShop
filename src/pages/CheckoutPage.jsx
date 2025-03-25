@@ -24,9 +24,7 @@ const CheckoutPage = () => {
   const [checkoutItems, setCheckoutItems] = useState([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState([]);
-  const token = sessionStorage.getItem("token");
-  const tokenParts = token.split(".");
-  const payload = JSON.parse(atob(tokenParts[1]));
+  const userId = JSON.parse(sessionStorage.getItem("user")).userId;
   // Form state
   const [formData, setFormData] = useState({
     fullName: "",
@@ -49,7 +47,6 @@ const CheckoutPage = () => {
   useEffect(() => {
     const fetchCartItems = async () => {
       try {
-        const userId = payload?.sub;
         if (!userId) {
           console.error("Lỗi: userId không hợp lệ");
           return;
@@ -77,7 +74,7 @@ const CheckoutPage = () => {
       try {
         const token = sessionStorage.getItem("token");
         const user = JSON.parse(sessionStorage.getItem("user"));
-        console.log(user.sub);
+        console.log(user.userId);
         if (!token || !user) {
           toast.error("Vui lòng đăng nhập để tiếp tục");
           navigate("/signin");
@@ -86,7 +83,7 @@ const CheckoutPage = () => {
 
         // Lấy thông tin user
         const userResponse = await axios.get(
-          `http://localhost:5258/api/User/UserInfo/${user.sub}`,
+          `http://localhost:5258/api/User/UserInfo/${user.userId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -329,69 +326,79 @@ const CheckoutPage = () => {
   );
 
   const processOrder = async () => {
+    const user = JSON.parse(sessionStorage.getItem("user"));
     try {
       setLoading(true);
 
-      // Chuẩn bị dữ liệu đơn hàng theo format của API
-      const orderData = {
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        address: `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`,
-        provinceCode: selectedProvince,
-        districtCode: selectedDistrict,
-        wardCode: formData.ward,
-      };
+      const orderItems = cartItems.map((item) => ({
+        productDetailId: item.productDetailId,
+        quantity: item.quantity,
+        priceAtOrder: item.price,
+      }));
+      console.log(orderItems);
+      // Tạo địa chỉ giao hàng
+      const shippingAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`;
 
-      // Gọi API tạo đơn hàng
-      const response = await axios.post(
-        "http://localhost:8081/saleShoes/orders",
-        orderData
+      const orderResponse = await axios.post(
+        "http://localhost:5258/api/orders",
+        {
+          userId: user.userId,
+          orderItems: orderItems,
+          shippingAddress: shippingAddress,
+        }
       );
 
-      if (response.data?.result) {
-        // Lưu địa chỉ mới
-        await axios.post(
-          "http://localhost:8081/saleShoes/users/addresses",
-          {
-            address: `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`,
-            provinceCode: selectedProvince,
-            districtCode: selectedDistrict,
-            wardCode: formData.ward,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+      if ((orderResponse.status = 200)) {
+        const orderId = orderResponse.data;
+        if (localStorage.getItem("token")) {
+          await axios.post(
+            "http://localhost:8081/saleShoes/users/addresses",
+            {
+              address: shippingAddress,
+              provinceCode: selectedProvince,
+              districtCode: selectedDistrict,
+              wardCode: formData.ward,
             },
-          }
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+        }
+
+        // Tính tổng tiền của đơn hàng
+        const totalAmount = orderItems.reduce(
+          (total, item) => total + item.quantity * item.priceAtOrder,
+          0
         );
 
-        // Xóa giỏ hàng sau khi đặt hàng thành công
-        localStorage.removeItem("cart");
-        localStorage.removeItem("checkoutItems");
-
-        // Nếu thanh toán bằng banking, chuyển đến trang thanh toán
+        // Nếu thanh toán bằng banking, chuyển đến trang thanh toán VNPAY
         if (formData.paymentMethod === "banking") {
           const paymentResponse = await axios.post(
-            "http://localhost:8081/saleShoes/payments/createPayment",
+            "http://localhost:5258/api/VNPay/create-payment",
             {
-              orderId: response.data.result.id,
+              amount: totalAmount,
+              orderDescription: `Thanh toán đơn hàng #${orderId}`,
+              orderType: "billpayment",
+              bankCode: "",
             }
           );
 
           if (paymentResponse.data?.paymentUrl) {
             window.location.href = paymentResponse.data.paymentUrl;
-            return;
           }
         }
 
-        // Chuyển đến trang thành công
-        navigate(`/order-success/${response.data.result.id}`);
+        // Chuyển đến trang thành công nếu thanh toán COD hoặc nếu không có URL thanh toán
+        navigate(`/order-success/${orderId}`);
         toast.success("Đặt hàng thành công!");
       }
     } catch (error) {
       console.error("Error placing order:", error);
-      toast.error("Có lỗi xảy ra khi đặt hàng");
+      toast.error(
+        error.response?.data?.message || "Có lỗi xảy ra khi đặt hàng"
+      );
     } finally {
       setLoading(false);
       setShowConfirmModal(false);

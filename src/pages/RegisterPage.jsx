@@ -119,17 +119,17 @@ const RegisterPage = () => {
         setIsSubmitting(true);
 
         const response = await axios.post(
-          "http://localhost:5258/register",
+          "http://localhost:5258/api/auth/register",
           {
-            UserName: formData.UserName.trim(),
-            Password: formData.Password,
-            Address: formData.Address,
-            Gender: formData.Gender,
-            DoB: formData.DoB,
-            Email: formData.Email,
-            Phone: formData.Phone,
-            LastName: formData.LastName,
-            FirstName: formData.FirstName,
+            userName: formData.UserName.trim(),
+            password: formData.Password,
+            email: formData.Email,
+            phone: formData.Phone,
+            doB: formData.DoB,
+            gender: formData.Gender,
+            address: formData.Address,
+            lastName: formData.LastName,
+            firstName: formData.FirstName,
           },
           {
             headers: {
@@ -137,6 +137,7 @@ const RegisterPage = () => {
             },
           }
         );
+
         if (response.status === 200) {
           toast.success("Registration successful!");
           setEmailSent(true);

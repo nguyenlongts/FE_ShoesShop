@@ -4,6 +4,8 @@ import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import ProductDetail from "./pages/ProductDetail";
 import CartPage from "./pages/CartPage";
+
+import OrderDetail from "./pages/OrderDetail";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AdminLayout from "./components/layouts/AdminLayout";
@@ -20,9 +22,11 @@ import OrderHistory from "./pages/OrderHistory";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
 import { Toaster } from "react-hot-toast";
+import { ToastContainer } from "react-toastify";
 import AdminSizePage from "./pages/admin/AdminSizePage";
 import AdminColorPage from "./pages/admin/AdminColorPage";
 import AdminCouponPage from "./pages/admin/AdminCouponPage";
+import VnPayReturn from "./components/VNPayReturn";
 const ProtectedRoute = ({ children }) => {
   const token = sessionStorage.getItem("token");
   const userStr = sessionStorage.getItem("user");
@@ -43,7 +47,7 @@ function App() {
         {/* Auth Routes - No Header/Footer */}
         <Route path="/signin" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-
+        <Route path="/vnpay-return" element={<VnPayReturn />} />
         {/* Client Routes - With Header/Footer */}
         <Route
           path="/*"
@@ -52,6 +56,8 @@ function App() {
               <Header />
               <main className="flex-grow">
                 <Routes>
+                  <Route path="order/:orderId" element={<OrderDetail />} />
+
                   <Route index element={<HomePage />} />
                   <Route path="product/:id" element={<ProductDetail />} />
                   <Route path="cart" element={<CartPage />} />

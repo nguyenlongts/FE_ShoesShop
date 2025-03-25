@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import logo from "../images/logo.png";
+import logo2 from "../images/logo2.png";
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,11 +55,8 @@ const Header = () => {
   return (
     <header className="w-full">
       {/* Top header */}
-      <div className="bg-gray-100 px-8 py-2 flex justify-between items-center text-sm">
-        <Link to="/">
-          <img src="/jordan.svg" alt="Jordan Logo" className="h-6" />
-        </Link>
-        <div className="flex gap-4">
+      <div className="bg-gray-100 px-8 py-2 flex justify-end items-center text-sm">
+        <div className="flex gap-4 ">
           <Link to="/history">History</Link>
           <span>|</span>
           <Link to="/myvoucher">My Voucher</Link>
@@ -69,7 +68,7 @@ const Header = () => {
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 hover:text-gray-600 font-medium"
               >
-                <span>Xin chào, {user.Username}</span>
+                <span>Xin chào, {user.username}</span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -109,7 +108,7 @@ const Header = () => {
                         </svg>
                       </div>
                       <div>
-                        <p className="font-medium">{user.Username}</p>
+                        <p className="font-medium">{user.username}</p>
                         <p className="text-sm text-gray-500">{user.email}</p>
                       </div>
                     </div>
@@ -236,7 +235,7 @@ const Header = () => {
       {/* Main header */}
       <div className="px-8 py-4 flex justify-between items-center">
         <Link to="/">
-          <img src="/nike.svg" alt="Nike Logo" className="h-6" />
+          <img src={logo2} alt="Nike Logo" className="h-20" />
         </Link>
 
         <nav className="flex gap-8">

@@ -5,6 +5,48 @@ const Sidebar = () => {
   const [brands, setBrands] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [colors, setColors] = useState([]);
+  const colorMap = {
+    Đỏ: "#FF0000",
+    "Xanh dương": "#0000FF",
+    "Xanh lá": "#008000",
+    Vàng: "#FFFF00",
+    Cam: "#FFA500",
+    Tím: "#800080",
+    Hồng: "#FFC0CB",
+    Trắng: "#FFFFFF",
+    Đen: "#000000",
+    Xám: "#808080",
+  };
+
+  <div className="mb-8">
+    <h3 className="font-medium mb-4">Colors</h3>
+    <p className="text-sm text-gray-500 mb-2">Màu sắc</p>
+    <div className="grid grid-cols-4 gap-2">
+      {colors.length > 0 ? (
+        colors.map((color) => {
+          const bgColor = colorMap[color.colorName] || "#ccc"; // Nếu không có màu, mặc định xám
+          return (
+            <div
+              key={color.colorId}
+              className="flex flex-col items-center gap-1"
+            >
+              <button
+                className="w-8 h-8 rounded-full border border-gray-300 hover:border-black focus:ring-2 focus:ring-black transition"
+                style={{ backgroundColor: bgColor }}
+                title={color.colorName}
+                aria-label={color.name || "Màu không xác định"}
+              />
+              <span className="text-xs text-gray-500">{color.colorName}</span>
+            </div>
+          );
+        })
+      ) : (
+        <div className="col-span-4 text-center text-gray-500">
+          Không có màu sắc
+        </div>
+      )}
+    </div>
+  </div>;
 
   useEffect(() => {
     const fetchBrands = async () => {
@@ -160,21 +202,29 @@ const Sidebar = () => {
         <p className="text-sm text-gray-500 mb-2">Màu sắc</p>
         <div className="grid grid-cols-4 gap-2">
           {colors.length > 0 ? (
-            colors.map((color) => (
-              <div
-                key={color.colorId}
-                className="flex flex-col items-center gap-1"
-              >
-                <button
-                  className="w-8 h-8 rounded-full border border-gray-300 hover:border-black"
-                  style={{ backgroundColor: color.colorCode }}
-                  title={color.colorName}
-                />
-                <span className="text-xs text-gray-500">{color.name}</span>
-              </div>
-            ))
+            colors.map((color) => {
+              const bgColor = colorMap[color.name] || "#ccc"; // Nếu không có màu, mặc định xám
+              return (
+                <div
+                  key={color.colorId}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <button
+                    className="w-8 h-8 rounded-full border border-gray-300 hover:border-black focus:ring-2 focus:ring-black transition"
+                    style={{ backgroundColor: bgColor }}
+                    title={color.name}
+                    aria-label={color.name || "Màu không xác định"}
+                  />
+                  <span className="text-xs text-gray-500">
+                    {color.colorName}
+                  </span>
+                </div>
+              );
+            })
           ) : (
-            <div key="no-colors">Không có màu sắc</div>
+            <div className="col-span-4 text-center text-gray-500">
+              Không có màu sắc
+            </div>
           )}
         </div>
       </div>

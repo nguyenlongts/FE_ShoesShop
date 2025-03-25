@@ -31,8 +31,8 @@ const CartPage = () => {
     const fetchCartItems = async () => {
       try {
         const user = sessionStorage.getItem("user"); // Đảm bảo tên key là chuỗi
-        const userId = user ? JSON.parse(user).sub : null;
-
+        const userId = user ? JSON.parse(user).userId : null;
+        console.log(userId);
         const response = await fetch(
           `http://localhost:5258/api/Cart/GetAllCartItems?userId=${userId}`
         );
@@ -41,6 +41,7 @@ const CartPage = () => {
           throw new Error("Failed to fetch cart items");
         }
         const data = await response.json();
+        console.log(data);
         if (Array.isArray(data) && data.length > 0) {
           setCartItems(data);
         } else {
@@ -53,28 +54,10 @@ const CartPage = () => {
 
     fetchCartItems();
   }, []);
-  // const GetMaxQuantity = (productDetailId) => {
-  //   const response = fetch(
-  //     `http://localhost:5258/api/ProductDetail/${productDetailId}`
-  //   );
-  //   const data = response.json();
-  //   console.log("Stock Quantity from API:", data.stockQuantity);
-  //   return data.stockQuantity;
-  // };
-  // useEffect(() => {
-  //   const fetchMaxQuantity = async () => {
-  //     const max = await GetMaxQuantity(productDetailId);
-  //     setMaxQuantity(max);
-  //   };
-
-  //   if (productDetailId) {
-  //     fetchMaxQuantity();
-  //   }
-  // }, [productDetailId]);
   const updateQuantity = async (cartItemId, newQuantity) => {
     try {
       const user = sessionStorage.getItem("user");
-      const userId = user ? JSON.parse(user).sub : null; // Lấy userId từ sessionStorage
+      const userId = user ? JSON.parse(user).userId : null; // Lấy userId từ sessionStorage
       console.log(userId);
       if (!userId) {
         console.error("User not found in sessionStorage");
@@ -102,9 +85,6 @@ const CartPage = () => {
 
       const result = await response.json();
       console.log("Quantity updated:", result);
-
-      // Cập nhật giao diện giỏ hàng sau khi thành công (tuỳ vào framework bạn đang dùng)
-      // Ví dụ: setCartData(updatedCart);
       setCartItems((prevCartItems) =>
         prevCartItems.map((item) =>
           item.cartItemId === cartItemId
@@ -117,11 +97,38 @@ const CartPage = () => {
     }
   };
 
-  // Xóa sản phẩm khỏi giỏ hàng
-  const removeItem = (itemIndex) => {
-    const updatedCart = cartItems.filter((_, index) => index !== itemIndex);
-    setCartItems(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
+  const removeItem = async (productDetailId) => {
+    try {
+      const userId = JSON.parse(sessionStorage.getItem("user")).userId;
+
+      const response = await fetch(
+        "http://localhost:5258/api/Cart/RemoveItem",
+        {
+          method: "Delete",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: userId,
+            productDetailId: productDetailId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to remove item from cart");
+      }
+
+      const updatedCart = cartItems.filter(
+        (item) => item.productDetailId !== productDetailId
+      );
+      setCartItems(updatedCart);
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+    } catch (error) {
+      console.error("Error removing item from cart:", error);
+      // Optionally, show an error message to the user
+      // toast.error('Could not remove item from cart');
+    }
   };
 
   const handleApplyVoucher = () => {
@@ -270,7 +277,7 @@ const CartPage = () => {
                         </button>
                       </div>
                       <button
-                        onClick={() => removeItem(index)}
+                        onClick={() => removeItem(item.productDetailId)}
                         className="text-gray-500 hover:text-black"
                       >
                         Xóa

@@ -106,10 +106,9 @@ const ProductDetail = () => {
       toast.error("Bạn cần đăng nhập để thực hiện thao tác này.");
       return null;
     }
-    const tokenParts = token.split(".");
-    const payload = JSON.parse(atob(tokenParts[1]));
-    const userId = payload.sub;
-
+    const user = sessionStorage.getItem("user");
+    const userId = JSON.parse(user).userId;
+    console.log(userId);
     try {
       const response = await axios.get(
         `http://localhost:5258/api/Cart/GetCartById/${userId}`,
@@ -137,17 +136,14 @@ const ProductDetail = () => {
 
   const addToCart = async () => {
     try {
-      const token = sessionStorage.getItem("token");
-      if (!token) {
+      const user = JSON.parse(sessionStorage.getItem("user"));
+
+      if (!user || !user.userId) {
         toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng");
         navigate("/signin", { state: { from: `/product/${id}` } });
         return;
       }
-
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const userId = payload?.sub;
-      if (!userId) throw new Error("Token không hợp lệ");
-
+      const userId = user.userId;
       if (!selectedVariant) {
         toast.error("Vui lòng chọn màu sắc và kích thước");
         return;
@@ -169,42 +165,12 @@ const ProductDetail = () => {
           quantity,
         }
       );
-
       if (response.data !== "Thêm thành công") {
         throw new Error("Lỗi từ server");
       }
 
-      // Cập nhật giỏ hàng trên localStorage
-      const cartItem = {
-        userId: userId,
-        productId: product.productId,
-        variantId: selectedVariant.productDetailId,
-        name: product.name,
-        price: selectedVariant.price,
-        quantity,
-        image: selectedVariant.imageUrl[0] ?? "",
-        color: selectedColor,
-        size: selectedSize,
-      };
-
-      const existingCart = JSON.parse(localStorage.getItem("cart") ?? "[]");
-      const existingItem = existingCart.find(
-        (item) =>
-          item.variantId === cartItem.variantId && item.userId === userId
-      );
-
-      const updatedCart = existingItem
-        ? existingCart.map((item) =>
-            item.variantId === cartItem.variantId
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          )
-        : [...existingCart, cartItem];
-
-      localStorage.setItem("cart", JSON.stringify(updatedCart));
       toast.success("Đã thêm vào giỏ hàng");
     } catch (error) {
-      //console.error("Lỗi khi thêm vào giỏ hàng:", error);
       toast.error("Không thể thêm vào giỏ hàng");
     } finally {
       setLoading(false);
@@ -222,7 +188,6 @@ const ProductDetail = () => {
 
       await addToCart();
 
-      // Lưu thông tin đơn hàng tạm thời để sử dụng ở trang checkout
       const orderItem = {
         productId: product.id,
         variantId: selectedVariant.id,

@@ -2,138 +2,91 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { jwtDecode } from "jwt-decode";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    Username: "",
-    Password: "",
+  const [credentials, setCredentials] = useState({
+    username: "",
+    password: "",
   });
-
   const [error, setError] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const handleChange = ({ target: { name, value } }) => {
+    setCredentials((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    const loginData = {
-      Username: formData.Username.trim(),
-      Password: formData.Password,
-    };
-
     try {
-      const response = await axios.post(
-        "http://localhost:5258/login",
-        loginData,
+      const { data } = await axios.post(
+        "http://localhost:5258/api/Auth/login",
         {
-          headers: { "Content-Type": "application/json" },
+          Username: credentials.username.trim(),
+          Password: credentials.password,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Accept-Charset": "UTF-8",
+          },
         }
       );
 
-      if (response.data) {
-        const token = response.data.token;
-        console.log(token);
-        handleTokenParsing(token);
-      } else {
-        handleLoginError("Đăng nhập thất bại");
+      if (data?.token) {
+        processLoginToken(data.token);
       }
     } catch (error) {
-      handleErrorResponse(error);
+      handleLoginError(error);
     }
   };
 
-  const handleTokenParsing = (token) => {
+  const processLoginToken = (token) => {
     try {
-      const tokenParts = token.split(".");
-      const payload = JSON.parse(atob(tokenParts[1]));
+      const payload = jwtDecode(token);
+
       const isAdmin = payload.role === "admin";
-      console.log(isAdmin);
-      if (isAdmin) {
-        handleSuccessfulLogin(token, "ADMIN", "/admin/dashboard");
-      } else {
-        handleEmailConfirmation(payload, token);
+      const isEmailConfirmed = payload.email_confirm.toLowerCase() === "true";
+
+      if (!isEmailConfirmed) {
+        toast.error("Vui lòng xác thực email trước khi đăng nhập");
+        return;
       }
-    } catch (tokenError) {
-      console.error("Token parsing error:", tokenError);
-      handleLoginError("Lỗi xử lý token");
+
+      const userInfo = {
+        username: payload.Username || "",
+        email: payload.Email || "",
+        phone: payload.Phone || "",
+        address: payload.Address || "", // Sẽ không bị lỗi font nữa
+        userId: payload.UserId,
+        role: isAdmin ? "ADMIN" : "USER",
+      };
+
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("user", JSON.stringify(userInfo));
+
+      toast.success("Đăng nhập thành công");
+      navigate(isAdmin ? "/admin/dashboard" : "/");
+    } catch (error) {
+      toast.error("Lỗi xử lý token");
+      console.error("Token parsing error:", error);
     }
   };
 
-  const handleEmailConfirmation = (payload, token) => {
-    const isConfirmed = payload.email_confirm.toLowerCase() === "true";
-    console.log("Email confirm: ", isConfirmed);
-    if (!isConfirmed) {
-      setError("Tài khoản chưa được xác thực");
-      toast.error("Vui lòng xác thực email trước khi đăng nhập");
-      navigate("/signin");
-    } else {
-      handleSuccessfulLogin(token, "USER", "/");
-    }
-  };
-
-  const decodeBase64UTF8 = (str) => {
-    try {
-      return new TextDecoder("utf-8").decode(
-        Uint8Array.from(atob(str), (c) => c.charCodeAt(0))
-      );
-    } catch (e) {
-      console.error("Lỗi giải mã UTF-8:", e);
-      return "";
-    }
-  };
-  const handleSuccessfulLogin = (token, role, navigateTo) => {
-    const tokenParts = token.split(".");
-    const payload = JSON.parse(decodeBase64UTF8(tokenParts[1]));
-
-    sessionStorage.setItem("token", token);
-    sessionStorage.setItem(
-      "user",
-      JSON.stringify({
-        Username: payload.Username, // Lấy từ payload thay vì formData
-        token,
-        email: payload.Email,
-        phone: payload.Phone,
-        address: payload.Address,
-        sub: payload.sub, // Trực tiếp lấy từ payload
-        role,
-      })
-    );
-
-    toast.success("Đăng nhập thành công");
-    console.log("Navigating to:", navigateTo);
-    navigate(navigateTo);
-  };
-
-  const handleLoginError = (message) => {
-    setError(message);
-    toast.error(message);
-  };
-
-  const handleErrorResponse = (error) => {
-    console.error("Login error:", error);
-    console.log("Error response data:", error.response?.data);
-
+  const handleLoginError = (error) => {
     const errorData = error.response?.data;
+    let errorMessage = "Đăng nhập thất bại";
+
     if (errorData?.code === 1017) {
-      setError("Tài khoản chưa được xác nhận");
-      toast.error(
-        "Tài khoản chưa được xác nhận. Vui lòng kiểm tra email để xác nhận tài khoản."
-      );
+      errorMessage = "Tài khoản chưa được xác nhận. Vui lòng kiểm tra email.";
     } else if (errorData?.message === "User is inactive") {
-      setError("Tài khoản đã bị vô hiệu hóa");
-      toast.error("Tài khoản đã bị vô hiệu hóa");
-    } else {
-      setError(errorData?.message || "Đăng nhập thất bại");
-      toast.error("Đăng nhập thất bại");
+      errorMessage = "Tài khoản đã bị vô hiệu hóa";
     }
+
+    setError(errorMessage);
+    toast.error(errorMessage);
   };
 
   return (
@@ -149,7 +102,7 @@ const LoginPage = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
                 {error}
@@ -158,45 +111,38 @@ const LoginPage = () => {
 
             <div>
               <label
-                htmlFor="Username"
+                htmlFor="username"
                 className="block text-sm font-medium text-gray-700"
               >
                 Username
               </label>
-              <div className="mt-1">
-                <input
-                  id="Username"
-                  name="Username"
-                  type="text"
-                  required
-                  value={formData.Username}
-                  onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    error ? "border-red-300" : "border-gray-300"
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm`}
-                />
-              </div>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                value={credentials.username}
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+              />
             </div>
 
             <div>
               <label
-                htmlFor="Password"
+                htmlFor="password"
                 className="block text-sm font-medium text-gray-700"
               >
                 Password
               </label>
-              <div className="mt-1">
-                <input
-                  id="Password"
-                  name="Password"
-                  type="Password"
-                  autoComplete="current-Password"
-                  required
-                  value={formData.Password}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black sm:text-sm"
-                />
-              </div>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                value={credentials.password}
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+              />
             </div>
 
             <div className="flex items-center justify-between">
@@ -217,22 +163,20 @@ const LoginPage = () => {
 
               <div className="text-sm">
                 <Link
-                  to="/forgot-Password"
+                  to="/forgot-password"
                   className="font-medium text-gray-600 hover:text-gray-500"
                 >
-                  Forgot your Password?
+                  Forgot your password?
                 </Link>
               </div>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-              >
-                SIGN IN
-              </button>
-            </div>
+            <button
+              type="submit"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+            >
+              SIGN IN
+            </button>
           </form>
 
           <div className="mt-6">
@@ -247,14 +191,12 @@ const LoginPage = () => {
               </div>
             </div>
 
-            <div className="mt-6">
-              <Link
-                to="/register"
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-              >
-                Join Us
-              </Link>
-            </div>
+            <Link
+              to="/register"
+              className="mt-6 w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+            >
+              Join Us
+            </Link>
           </div>
         </div>
       </div>
