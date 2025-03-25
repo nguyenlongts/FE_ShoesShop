@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import Sidebar from "../components/Sidebar";
 import axios from "axios";
-
+const API_URL = "/api";
 const HomePage = () => {
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(true);
