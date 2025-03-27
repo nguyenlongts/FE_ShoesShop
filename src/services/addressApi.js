@@ -1,4 +1,4 @@
-const API_URL = 'https://provinces.open-api.vn/api';
+const API_URL = "https://provinces.open-api.vn/api";
 
 export const getProvinces = async () => {
   const response = await fetch(`${API_URL}/p`);
@@ -22,9 +22,8 @@ export const calculateShippingFee = (provinceCode) => {
   // Phí ship cơ bản
   const baseFee = 30000;
 
-  // Các tỉnh/thành phố có phí ship cao hơn
-  const highFeeProvinces = ['01', '79', '48']; // Hà Nội, HCM, Đà Nẵng
-  const mediumFeeProvinces = ['31', '92', '33']; // Hải Phòng, Cần Thơ, Hưng Yên
+  const highFeeProvinces = ["01", "79", "48"]; // Hà Nội, HCM, Đà Nẵng
+  const mediumFeeProvinces = ["31", "92", "33"]; // Hải Phòng, Cần Thơ, Hưng Yên
 
   if (highFeeProvinces.includes(provinceCode)) {
     return baseFee;
@@ -33,4 +32,4 @@ export const calculateShippingFee = (provinceCode) => {
   } else {
     return baseFee + 20000;
   }
-}; 
+};

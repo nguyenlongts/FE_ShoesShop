@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { jwtDecode } from "jwt-decode";
-const API_URL = import.meta.env.VITE_API_URL;
 const LoginPage = () => {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
@@ -22,7 +21,7 @@ const LoginPage = () => {
 
     try {
       const { data } = await axios.post(
-        `${API_URL}/api/Auth/login`,
+        `http://localhost:5258/api/Auth/login`,
         {
           Username: credentials.username.trim(),
           Password: credentials.password,

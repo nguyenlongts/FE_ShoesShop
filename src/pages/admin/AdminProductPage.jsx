@@ -10,13 +10,7 @@ const AdminProductPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    brandID: "",
-    cateID: "",
-    basePrice: 0,
-  });
+
   const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
   const [pageSize, setPageSize] = useState(5);
   const token = sessionStorage.getItem("token");
@@ -119,6 +113,20 @@ const AdminProductPage = () => {
 
   // Create product modal
   const CreateModal = () => {
+    const [formData, setFormData] = useState({
+      name: "",
+      description: "",
+      brandID: "",
+      cateID: "",
+      basePrice: 0,
+    });
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      setFormData((prevState) => ({
+        ...prevState,
+        [name]: value,
+      }));
+    };
     const handleSubmit = async (e) => {
       e.preventDefault();
       try {
@@ -138,13 +146,6 @@ const AdminProductPage = () => {
           return;
         }
 
-        // const response = await axios.get(
-        //   `http://localhost:8081/saleShoes/products/name/${formData.name}`
-        // );
-        // if (response.data?.result.length > 0) {
-        //   toast.error("Sản phẩm đã tồn tại");
-        //   return;
-        // }
         await axios.post(
           "http://localhost:5258/api/product/create",
           {
@@ -180,43 +181,32 @@ const AdminProductPage = () => {
           <form onSubmit={handleSubmit}>
             <input
               type="text"
+              name="name" // Thêm name attribute
               placeholder="Tên sản phẩm"
               value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
+              onChange={handleChange}
               className="w-full px-4 py-2 border rounded-md"
               required
-              autoFocus
             />
             <textarea
+              name="description" // Thêm name attribute
               placeholder="Mô tả"
               value={formData.description}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
+              onChange={handleChange}
               className="w-full px-4 py-2 border rounded-md"
             />
             <input
               type="number"
+              name="basePrice" // Thêm name attribute
               placeholder="Giá cơ bản"
               value={formData.basePrice}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  basePrice: parseFloat(e.target.value),
-                }))
-              }
+              onChange={handleChange}
               className="w-full px-4 py-2 border rounded-md"
             />
             <select
+              name="brandID" // Thêm name attribute
               value={formData.brandID}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, brandID: e.target.value }))
-              }
+              onChange={handleChange}
               className="w-full px-4 py-2 border rounded-md"
               required
             >
@@ -228,13 +218,9 @@ const AdminProductPage = () => {
               ))}
             </select>
             <select
+              name="cateID" // Thêm name attribute
               value={formData.cateID}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  cateID: e.target.value,
-                }))
-              }
+              onChange={handleChange}
               className="w-full px-4 py-2 border rounded-md"
               required
             >
@@ -245,6 +231,7 @@ const AdminProductPage = () => {
                 </option>
               ))}
             </select>
+            {/* Phần còn lại giữ nguyên */}
             <div className="flex justify-end gap-2 mt-6">
               <button
                 type="button"
@@ -268,6 +255,13 @@ const AdminProductPage = () => {
 
   // Edit product modal
   const EditModal = () => {
+    const [formData, setFormData] = useState({
+      name: "",
+      description: "",
+      brandID: "",
+      cateID: "",
+      basePrice: 0,
+    });
     const handleSubmit = async (e) => {
       e.preventDefault();
       try {

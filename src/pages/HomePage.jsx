@@ -4,7 +4,6 @@ import ProductCard from "../components/ProductCard";
 import Sidebar from "../components/Sidebar";
 import axios from "axios";
 import React from "react";
-const API_URL = import.meta.env.VITE_API_URL;
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -15,12 +14,19 @@ const HomePage = () => {
   const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
   const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState([]);
-
+  const [filters, setFilters] = useState({
+    brands: [],
+    sizes: [],
+    colors: [],
+    priceRange: [],
+  });
+  const API_URL = import.meta.env.VITE_API_URL;
   const fetchProducts = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5258/api/Product/GetCustomerProduct?pageSize=9&$pageNum=${pageNumber}`
+        `${API_URL}/api/Product/GetCustomerProduct?pageSize=9&$pageNum=${pageNumber}`
       );
+
       const productsData = response.data.products || [];
       setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (error) {
