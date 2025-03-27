@@ -25,7 +25,7 @@ const OrderHistory = () => {
       const userId = JSON.parse(user).userId;
       console.log(userId);
       const response = await axios.get(
-        `http://localhost:5258/api/orders/user/${userId}?pageNum=${currentPage}&pageSize=${pageSize}`
+        `${API_URL}/api/orders/user/${userId}?pageNum=${currentPage}&pageSize=${pageSize}`
       );
       setOrders(response.data.items);
       setTotalPages(response.data.totalPages);

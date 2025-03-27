@@ -112,7 +112,7 @@ const ProductDetail = () => {
     console.log(userId);
     try {
       const response = await axios.get(
-        `http://localhost:5258/api/Cart/GetCartById/${userId}`,
+        `${API_URL}/api/Cart/GetCartById/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -158,14 +158,11 @@ const ProductDetail = () => {
         return;
       }
 
-      const response = await axios.post(
-        "http://localhost:5258/api/cart/addtocart",
-        {
-          userId,
-          productDetailId: selectedVariant.productDetailId,
-          quantity,
-        }
-      );
+      const response = await axios.post(`${API_URL}/api/cart/addtocart`, {
+        userId,
+        productDetailId: selectedVariant.productDetailId,
+        quantity,
+      });
       if (response.data !== "Thêm thành công") {
         throw new Error("Lỗi từ server");
       }
@@ -233,13 +230,13 @@ const ProductDetail = () => {
     const fetchSizesAndColors = async () => {
       try {
         const sizesResponse = await axios.get(
-          "http://localhost:5258/api/Size/GetAll?pageNumber=1&pageSize=100"
+          `${API_URL}/api/Size/GetAll?pageNumber=1&pageSize=100`
         );
         if (sizesResponse.data.items) {
           setSizes(sizesResponse.data.items);
         }
         const colorsResponse = await axios.get(
-          "http://localhost:5258/api/Color/GetAll?pageNumber=1&pageSize=100"
+          `${API_URL}/api/Color/GetAll?pageNumber=1&pageSize=100`
         );
         if (colorsResponse.data.items) {
           setColors(colorsResponse.data.items);
