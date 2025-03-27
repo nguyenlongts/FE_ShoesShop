@@ -339,14 +339,11 @@ const CheckoutPage = () => {
       // Tạo địa chỉ giao hàng
       const shippingAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`;
 
-      const orderResponse = await axios.post(
-        "http://localhost:5258/api/orders",
-        {
-          userId: user.userId,
-          orderItems: orderItems,
-          shippingAddress: shippingAddress,
-        }
-      );
+      const orderResponse = await axios.post(`${API_URL}/api/orders`, {
+        userId: user.userId,
+        orderItems: orderItems,
+        shippingAddress: shippingAddress,
+      });
 
       if ((orderResponse.status = 200)) {
         const orderId = orderResponse.data;
@@ -376,7 +373,7 @@ const CheckoutPage = () => {
         // Nếu thanh toán bằng banking, chuyển đến trang thanh toán VNPAY
         if (formData.paymentMethod === "banking") {
           const paymentResponse = await axios.post(
-            "http://localhost:5258/api/VNPay/create-payment",
+            `${API_URL}/api/VNPay/create-payment`,
             {
               amount: totalAmount,
               orderDescription: `Thanh toán đơn hàng #${orderId}`,
