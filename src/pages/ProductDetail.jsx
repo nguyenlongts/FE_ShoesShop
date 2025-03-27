@@ -36,8 +36,8 @@ const ProductDetail = () => {
         setLoading(true);
         // Fetch cả thông tin sản phẩm và variants
         const [productResponse, variantsResponse] = await Promise.all([
-          axios.get(`http://localhost:5258/api/Product/GetByID?id=${id}`),
-          axios.get(`http://localhost:5258/api/ProductDetail/${id}/details`),
+          axios.get(`${API_URL}/api/Product/GetByID?id=${id}`),
+          axios.get(`${API_URL}/api/ProductDetail/${id}/details`),
         ]);
 
         // Xử lý thông tin chung của sản phẩm
