@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { toast } from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
-import { vouchers } from '../data/vouchers';
+import React, { useState } from "react";
+import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { vouchers } from "../data/vouchers";
 
 const VoucherPage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all'); // all, used, unused
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all"); // all, used, unused
   const navigate = useNavigate();
 
   // Kiểm tra voucher sắp hết hạn (còn 7 ngày)
@@ -15,27 +15,31 @@ const VoucherPage = () => {
     const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
     return daysLeft <= 7 && daysLeft > 0;
   };
-
+  const API_URL = import.meta.env.VITE_API_URL;
   // Copy mã voucher
   const copyVoucherCode = (code) => {
     navigator.clipboard.writeText(code);
-    toast.success('Đã sao chép mã voucher!');
+    toast.success("Đã sao chép mã voucher!");
   };
 
   // Lọc voucher
-  const filteredVouchers = vouchers.filter(voucher => {
-    const matchesSearch = voucher.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         voucher.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterStatus === 'all' ? true :
-                         filterStatus === 'used' ? voucher.isUsed :
-                         !voucher.isUsed;
+  const filteredVouchers = vouchers.filter((voucher) => {
+    const matchesSearch =
+      voucher.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      voucher.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter =
+      filterStatus === "all"
+        ? true
+        : filterStatus === "used"
+        ? voucher.isUsed
+        : !voucher.isUsed;
     return matchesSearch && matchesFilter;
   });
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">My Vouchers</h1>
-      
+
       {/* Search and Filter Controls */}
       <div className="flex gap-4 mb-6">
         <input
@@ -59,11 +63,11 @@ const VoucherPage = () => {
       {/* Voucher List */}
       <div className="grid gap-4">
         {filteredVouchers.map((voucher) => (
-          <div 
+          <div
             key={voucher.id}
             className={`border rounded-lg p-4 flex justify-between items-center bg-white shadow-sm
                        transition-transform duration-300 hover:scale-[1.02] hover:shadow-md
-                       ${voucher.isUsed ? 'opacity-60' : ''}`}
+                       ${voucher.isUsed ? "opacity-60" : ""}`}
           >
             <div className="flex-1">
               <div className="flex items-center gap-4">
@@ -83,7 +87,12 @@ const VoucherPage = () => {
                   <p className="text-gray-600 text-sm">{voucher.description}</p>
                   {isExpiringSoon(voucher.expiryDate) && (
                     <p className="text-orange-500 text-sm mt-1">
-                      Sắp hết hạn! Còn {Math.ceil((new Date(voucher.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))} ngày
+                      Sắp hết hạn! Còn{" "}
+                      {Math.ceil(
+                        (new Date(voucher.expiryDate) - new Date()) /
+                          (1000 * 60 * 60 * 24)
+                      )}{" "}
+                      ngày
                     </p>
                   )}
                 </div>
@@ -91,13 +100,18 @@ const VoucherPage = () => {
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-500">
-                Hết hạn: {new Date(voucher.expiryDate).toLocaleDateString('vi-VN')}
+                Hết hạn:{" "}
+                {new Date(voucher.expiryDate).toLocaleDateString("vi-VN")}
               </p>
               <p className="text-sm text-gray-500">
-                Đơn tối thiểu: {voucher.minSpend.toLocaleString('vi-VN')}đ
+                Đơn tối thiểu: {voucher.minSpend.toLocaleString("vi-VN")}đ
               </p>
-              <span className={`text-sm ${voucher.isUsed ? 'text-red-500' : 'text-green-500'}`}>
-                {voucher.isUsed ? 'Đã sử dụng' : 'Chưa sử dụng'}
+              <span
+                className={`text-sm ${
+                  voucher.isUsed ? "text-red-500" : "text-green-500"
+                }`}
+              >
+                {voucher.isUsed ? "Đã sử dụng" : "Chưa sử dụng"}
               </span>
             </div>
           </div>
@@ -107,4 +121,4 @@ const VoucherPage = () => {
   );
 };
 
-export default VoucherPage; 
+export default VoucherPage;

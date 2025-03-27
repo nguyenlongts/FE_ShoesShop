@@ -16,6 +16,7 @@ const RegisterPage = () => {
     LastName: "",
     FirstName: "",
   });
+  const API_URL = import.meta.env.VITE_API_URL;
   const [emailSent, setEmailSent] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -119,7 +120,7 @@ const RegisterPage = () => {
         setIsSubmitting(true);
 
         const response = await axios.post(
-          "http://localhost:5258/api/auth/register",
+          `${API_URL}/api/auth/register`,
           {
             userName: formData.UserName.trim(),
             password: formData.Password,

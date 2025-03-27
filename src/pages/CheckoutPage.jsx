@@ -9,7 +9,7 @@ import {
   calculateShippingFee,
 } from "../services/addressApi";
 import { ORDER_STATUS } from "../data/orderStatus";
-
+const API_URL = import.meta.env.VITE_API_URL;
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
@@ -52,7 +52,7 @@ const CheckoutPage = () => {
           return;
         }
         const response = await axios.get(
-          `http://localhost:5258/api/Cart/GetAllCartItems?userId=${userId}`
+          `${API_URL}/api/Cart/GetAllCartItems?userId=${userId}`
         );
 
         console.log(response.data); // Kiểm tra data trả về
@@ -83,7 +83,7 @@ const CheckoutPage = () => {
 
         // Lấy thông tin user
         const userResponse = await axios.get(
-          `http://localhost:5258/api/User/UserInfo/${user.userId}`,
+          `${API_URL}/api/User/UserInfo/${user.userId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

@@ -12,7 +12,7 @@ const CartPage = () => {
   const [appliedVouchers, setAppliedVouchers] = useState([]);
   const [voucherError, setVoucherError] = useState("");
   const [maxQuantity, setMaxQuantity] = useState(null);
-
+  const API_URL = import.meta.env.VITE_API_URL;
   // Tính tổng tiền trước khi áp dụng voucher
   const subtotal = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
@@ -34,7 +34,7 @@ const CartPage = () => {
         const userId = user ? JSON.parse(user).userId : null;
         console.log(userId);
         const response = await fetch(
-          `http://localhost:5258/api/Cart/GetAllCartItems?userId=${userId}`
+          `${API_URL}/api/Cart/GetAllCartItems?userId=${userId}`
         );
 
         if (!response.ok) {
@@ -65,7 +65,7 @@ const CartPage = () => {
       }
 
       const response = await fetch(
-        `http://localhost:5258/api/cart/UpdateQuantity/${cartItemId}`,
+        `${API_URL}/api/cart/UpdateQuantity/${cartItemId}`,
         {
           method: "POST",
           headers: {
@@ -101,19 +101,16 @@ const CartPage = () => {
     try {
       const userId = JSON.parse(sessionStorage.getItem("user")).userId;
 
-      const response = await fetch(
-        "http://localhost:5258/api/Cart/RemoveItem",
-        {
-          method: "Delete",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: userId,
-            productDetailId: productDetailId,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/api/Cart/RemoveItem`, {
+        method: "Delete",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userId,
+          productDetailId: productDetailId,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to remove item from cart");

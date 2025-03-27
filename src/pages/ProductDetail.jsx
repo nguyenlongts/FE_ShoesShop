@@ -18,6 +18,7 @@ const ProductDetail = () => {
     comment: "",
     images: [],
   });
+  const API_URL = import.meta.env.VITE_API_URL;
   const [reviews, setReviews] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [colors, setColors] = useState([]);

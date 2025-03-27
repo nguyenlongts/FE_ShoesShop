@@ -10,6 +10,7 @@ const OrderHistory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 5;
+  const API_URL = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const orderStatusMap = {
     0: "Chờ xác nhận",
