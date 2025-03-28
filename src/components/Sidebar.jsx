@@ -55,19 +55,24 @@ const Sidebar = ({ onFilterSubmit }) => {
 
   const handleFilterChange = (type, value) => {
     setSelectedFilters((prevFilters) => {
-      const updatedFilters = { ...prevFilters };
+      // Handle price range separately (radio button)
       if (type === "priceRange") {
-        updatedFilters.priceRange = value;
-      } else {
-        if (updatedFilters[type].includes(value)) {
-          updatedFilters[type] = updatedFilters[type].filter(
-            (item) => item !== value
-          );
-        } else {
-          updatedFilters[type].push(value);
-        }
+        return { ...prevFilters, priceRange: value };
       }
-      return updatedFilters;
+
+      // For other types (sizes, colors, brands)
+      const currentSelectedItems = prevFilters[type];
+      const isCurrentlySelected = currentSelectedItems.includes(value);
+
+      // If already selected, remove it; if not selected, add it
+      const updatedItems = isCurrentlySelected
+        ? currentSelectedItems.filter((item) => item !== value)
+        : [...currentSelectedItems, value];
+
+      return {
+        ...prevFilters,
+        [type]: updatedItems,
+      };
     });
   };
 
