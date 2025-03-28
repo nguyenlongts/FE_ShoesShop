@@ -85,7 +85,6 @@ const Sidebar = ({ onFilterSubmit }) => {
         page: 1,
         pageSize: 10,
       });
-      console.log(response.data.products);
       if (typeof onFilterSubmit === "function") {
         onFilterSubmit(response.data.products); // Gửi kết quả lên `HomePage`
       } else {

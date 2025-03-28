@@ -78,7 +78,6 @@ const ProductDetail = () => {
 
         // Xử lý variants
         if (variantsResponse.data) {
-          console.log(variantsResponse.data);
           const variants = variantsResponse.data;
           setProductVariants(variants);
 
@@ -86,7 +85,6 @@ const ProductDetail = () => {
           if (variants.length > 0) {
             const uniqueColors = [...new Set(variants.map((v) => v.colorName))];
             const uniqueSizes = [...new Set(variants.map((v) => v.sizeName))];
-            console.log(uniqueColors);
             if (uniqueColors.length > 0) setSelectedColor(uniqueColors[0]);
             if (uniqueSizes.length > 0) setSelectedSize(uniqueSizes[0]);
           }
@@ -131,7 +129,7 @@ const ProductDetail = () => {
     }
     const user = sessionStorage.getItem("user");
     const userId = JSON.parse(user).userId;
-    console.log(userId);
+
     try {
       const response = await axios.get(
         `${API_URL}/api/Cart/GetCartById/${userId}`,
@@ -626,7 +624,7 @@ const ProductDetail = () => {
           {selectedVariant && selectedVariant.imageUrl ? (
             <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
               <img
-                src={`http://localhost:5258/Uploads/${selectedVariant.imageUrl}`}
+                src={`${API_URL}/Uploads/${selectedVariant.imageUrl}`}
                 alt={product?.name}
                 className="w-full h-full object-cover"
               />
