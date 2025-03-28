@@ -31,15 +31,9 @@ const Sidebar = ({ onFilterSubmit }) => {
     const fetchData = async () => {
       try {
         const [brandRes, sizeRes, colorRes] = await Promise.all([
-          axios.get(
-            "http://localhost:5258/api/Brand/GetAll?pageNumber=1&pageSize=10"
-          ),
-          axios.get(
-            "http://localhost:5258/api/Size/GetAll?pageNumber=1&pageSize=10"
-          ),
-          axios.get(
-            "http://localhost:5258/api/Color/GetAll?pageNumber=1&pageSize=10"
-          ),
+          axios.get(`${API_URL}/api/Brand/GetAll?pageNumber=1&pageSize=10`),
+          axios.get(`${API_URL}/api/Size/GetAll?pageNumber=1&pageSize=10`),
+          axios.get(`${API_URL}/api/Color/GetAll?pageNumber=1&pageSize=10`),
         ]);
 
         setBrands(brandRes.data.items.filter((b) => b.isActive));

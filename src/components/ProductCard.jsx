@@ -2,12 +2,12 @@ import { Link } from "react-router-dom";
 
 const ProductCard = ({ product }) => {
   const defaultImage = "/path/to/default/image.jpg";
-
+  const API_URL = import.meta.env.VITE_API_URL;
   return (
     <Link to={`/product/${product.id}`} className="group">
       <div className="aspect-square mb-2 overflow-hidden rounded-lg bg-gray-100">
         <img
-          src={`http://localhost:5258/Uploads/${product.images}`}
+          src={`${API_URL}/Uploads/${product.images}`}
           alt={product?.name}
           className="h-full w-full object-cover object-center group-hover:opacity-75"
         />
