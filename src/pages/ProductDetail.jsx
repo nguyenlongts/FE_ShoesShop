@@ -18,6 +18,7 @@ const ProductDetail = () => {
     comment: "",
     images: [],
   });
+  const [selectedImage, setSelectedImage] = useState(null);
   const API_URL = import.meta.env.VITE_API_URL;
   const [reviews, setReviews] = useState([]);
   const [sizes, setSizes] = useState([]);
@@ -29,7 +30,27 @@ const ProductDetail = () => {
       setQuantity(1);
     }
   }, [selectedVariant]);
+  useEffect(() => {
+    if (selectedColor) {
+      // Find the first variant with the selected color
+      const firstVariantWithColor = productVariants.find(
+        (variant) => variant.colorName === selectedColor
+      );
 
+      if (firstVariantWithColor) {
+        setSelectedImage(
+          `http://localhost:5258/Uploads/${firstVariantWithColor.imageUrl}`
+        );
+        const availableSizes = productVariants
+          .filter((variant) => variant.colorName === selectedColor)
+          .map((variant) => variant.sizeName);
+
+        if (availableSizes.length > 0) {
+          setSelectedSize(availableSizes[0]);
+        }
+      }
+    }
+  }, [selectedColor, productVariants]);
   useEffect(() => {
     const fetchProductData = async () => {
       try {
@@ -38,6 +59,7 @@ const ProductDetail = () => {
         const [productResponse, variantsResponse] = await Promise.all([
           axios.get(`${API_URL}/api/Product/GetByID?id=${id}`),
           axios.get(`${API_URL}/api/ProductDetail/${id}/details`),
+          //axios.get(`http://localhost:5258/api/ProductDetail/${id}/details`),
         ]);
 
         // Xử lý thông tin chung của sản phẩm
