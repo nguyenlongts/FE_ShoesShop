@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const Sidebar = ({ onFilterChange }) => {
+const Sidebar = ({ onFilterSubmit }) => {
   const [brands, setBrands] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [colors, setColors] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const [selectedFilters, setSelectedFilters] = useState({
     brands: [],
     sizes: [],
     colors: [],
-    priceRange: [],
+    priceRange: "",
   });
 
   const colorMap = {
@@ -52,20 +53,48 @@ const Sidebar = ({ onFilterChange }) => {
     fetchData();
   }, []);
 
-  // Xử lý cập nhật bộ lọc
   const handleFilterChange = (type, value) => {
     setSelectedFilters((prevFilters) => {
       const updatedFilters = { ...prevFilters };
-      if (updatedFilters[type].includes(value)) {
-        updatedFilters[type] = updatedFilters[type].filter(
-          (item) => item !== value
-        );
+      if (type === "priceRange") {
+        updatedFilters.priceRange = value;
       } else {
-        updatedFilters[type].push(value);
+        if (updatedFilters[type].includes(value)) {
+          updatedFilters[type] = updatedFilters[type].filter(
+            (item) => item !== value
+          );
+        } else {
+          updatedFilters[type].push(value);
+        }
       }
-      onFilterChange(updatedFilters); // Gửi dữ liệu lọc lên component cha
       return updatedFilters;
     });
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        "http://localhost:5258/api/Product/Filter",
+        {
+          brands: selectedFilters.brands,
+          sizes: selectedFilters.sizes,
+          colors: selectedFilters.colors,
+          priceRange: selectedFilters.priceRange,
+          page: 1,
+          pageSize: 10,
+        }
+      );
+      console.log(response.data.products);
+      if (typeof onFilterSubmit === "function") {
+        onFilterSubmit(response.data.products); // Gửi kết quả lên `HomePage`
+      } else {
+        console.error("onFilterSubmit is not a function");
+      }
+    } catch (error) {
+      console.error("Lỗi khi lọc sản phẩm:", error);
+    }
+    setLoading(false);
   };
 
   const priceRanges = [
@@ -85,10 +114,11 @@ const Sidebar = ({ onFilterChange }) => {
             <li key={range.value}>
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
-                  type="checkbox"
+                  type="radio"
+                  name="priceRange"
                   className="rounded border-gray-300"
                   onChange={() => handleFilterChange("priceRange", range.value)}
-                  checked={selectedFilters.priceRange.includes(range.value)}
+                  checked={selectedFilters.priceRange === range.value}
                 />
                 <span className="text-sm">{range.label}</span>
               </label>
@@ -160,6 +190,13 @@ const Sidebar = ({ onFilterChange }) => {
           })}
         </div>
       </div>
+      <button
+        onClick={handleSubmit}
+        className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
+        disabled={loading}
+      >
+        {loading ? "Đang tải..." : "Lọc sản phẩm"}
+      </button>
     </aside>
   );
 };

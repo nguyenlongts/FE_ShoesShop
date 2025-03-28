@@ -49,6 +49,10 @@ const HomePage = () => {
   const toggleSidebar = () => {
     setShowSidebar(!showSidebar);
   };
+  const handleFilterSubmit = (filteredProducts) => {
+    setProducts(filteredProducts); // Cập nhật danh sách sản phẩm sau khi lọc
+    setPageNumber(1); // Reset về trang đầu tiên
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -107,7 +111,7 @@ const HomePage = () => {
             showSidebar ? "w-64 opacity-100" : "w-0 opacity-0 overflow-hidden"
           }`}
         >
-          <Sidebar />
+          <Sidebar onFilterSubmit={handleFilterSubmit} />
         </div>
 
         <div
