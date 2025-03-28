@@ -6,7 +6,7 @@ const Sidebar = ({ onFilterSubmit }) => {
   const [sizes, setSizes] = useState([]);
   const [colors, setColors] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const API_URL = import.meta.env.VITE_API_URL;
   const [selectedFilters, setSelectedFilters] = useState({
     brands: [],
     sizes: [],
@@ -55,12 +55,10 @@ const Sidebar = ({ onFilterSubmit }) => {
 
   const handleFilterChange = (type, value) => {
     setSelectedFilters((prevFilters) => {
-      // Handle price range separately (radio button)
       if (type === "priceRange") {
         return { ...prevFilters, priceRange: value };
       }
 
-      // For other types (sizes, colors, brands)
       const currentSelectedItems = prevFilters[type];
       const isCurrentlySelected = currentSelectedItems.includes(value);
 
@@ -79,17 +77,14 @@ const Sidebar = ({ onFilterSubmit }) => {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:5258/api/Product/Filter",
-        {
-          brands: selectedFilters.brands,
-          sizes: selectedFilters.sizes,
-          colors: selectedFilters.colors,
-          priceRange: selectedFilters.priceRange,
-          page: 1,
-          pageSize: 10,
-        }
-      );
+      const response = await axios.post(`${API_URL}/api/Product/Filter`, {
+        brands: selectedFilters.brands,
+        sizes: selectedFilters.sizes,
+        colors: selectedFilters.colors,
+        priceRange: selectedFilters.priceRange,
+        page: 1,
+        pageSize: 10,
+      });
       console.log(response.data.products);
       if (typeof onFilterSubmit === "function") {
         onFilterSubmit(response.data.products); // Gửi kết quả lên `HomePage`
