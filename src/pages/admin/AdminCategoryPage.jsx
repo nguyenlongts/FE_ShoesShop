@@ -12,6 +12,7 @@ const AdminCategoryPage = () => {
     Name: "",
     isActive: true,
   });
+  const API_URL = import.meta.env.VITE_API_URL;
   const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
   const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState([]);
@@ -19,12 +20,9 @@ const AdminCategoryPage = () => {
   const headers = { Authorization: `Bearer ${token}` };
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:5258/api/Category/GetAll",
-        {
-          headers,
-        }
-      );
+      const response = await axios.get(`${API_URL}/api/Category/GetAll`, {
+        headers,
+      });
       if (response.data) {
         setCategories(response.data.items);
       }
@@ -32,17 +30,6 @@ const AdminCategoryPage = () => {
       toast.error("Không thể tải danh sách danh mục");
     }
   };
-  // const fetchCategories = async () => {
-  //   try {
-  //     const response = await axios.get('http://localhost:8081/saleShoes/categories/admin');
-  //     if (response.data?.result) {
-  //       setCategories(response.data.result);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching categories:', error);
-  //     toast.error('Không thể tải danh sách danh mục');
-  //   }
-  // };
 
   useEffect(() => {
     fetchCategories();
@@ -64,7 +51,7 @@ const AdminCategoryPage = () => {
 
     try {
       await axios.post(
-        "http://localhost:5258/api/Category/Create",
+        `${API_URL}/api/Category/Create`,
         {
           name: formData.name,
           isActive: true,
@@ -122,7 +109,7 @@ const AdminCategoryPage = () => {
       const category = categories.find((c) => c.cateID === Id);
       if (!category) return;
       const response = await fetch(
-        `http://localhost:5258/api/Category/UpdateStatus?id=${Id}`,
+        `${API_URL}/api/Category/UpdateStatus?id=${Id}`,
         {
           method: "PUT",
           headers,

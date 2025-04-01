@@ -11,7 +11,7 @@ const AdminSizePage = () => {
   const [formData, setFormData] = useState({
     name: "",
   });
-
+  const API_URL = import.meta.env.VITE_API_URL;
   const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
   const [pageSize, setPageSize] = useState(5);
 
@@ -22,7 +22,7 @@ const AdminSizePage = () => {
     try {
       // const token = localStorage.getItem("token"); // Lấy token từ localStorage
       const response = await axios.get(
-        `http://localhost:5258/api/Size/GetAll?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+        `${API_URL}/api/Size/GetAll?pageNumber=${pageNumber}&pageSize=${pageSize}`,
         {
           headers,
         }
@@ -58,7 +58,7 @@ const AdminSizePage = () => {
       try {
         // Kiểm tra xem màu sắc đã tồn tại hay chưa
         const response = await axios.get(
-          `http://localhost:5258/api/Size/GetByName?name=${formData.name}`
+          `${API_URL}/api/Size/GetByName?name=${formData.name}`
         );
         if (response.data?.result) {
           toast.error("Size đã tồn tại");
@@ -66,7 +66,7 @@ const AdminSizePage = () => {
         }
         // Nếu chưa tồn tại, thực hiện tạo mới
         await axios.post(
-          "http://localhost:5258/api/size/",
+          `${API_URL}/api/size/`,
           {
             ...formData,
             isActive: true,

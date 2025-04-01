@@ -18,11 +18,12 @@ const AdminProductPage = () => {
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [totalPages, setTotalPages] = useState([]);
+  const API_URL = import.meta.env.VITE_API_URL;
   // Fetch products
   const fetchProducts = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5258/api/Product/GetAllAdmin?pageSize=${pageSize}&pageNum=${pageNumber}`,
+        `${API_URL}/api/Product/GetAllAdmin?pageSize=${pageSize}&pageNum=${pageNumber}`,
         {
           headers,
         }
@@ -57,12 +58,8 @@ const AdminProductPage = () => {
   const fetchBrandsAndCategories = async () => {
     try {
       const [brandsRes, categoriesRes] = await Promise.all([
-        axios.get(
-          "http://localhost:5258/api/Brand/GetAll?pageSize=100&pageNum=1"
-        ),
-        axios.get(
-          "http://localhost:5258/api/Category/GetAll?pageSize=100&pageNum=1"
-        ),
+        axios.get(`${API_URL}/api/Brand/GetAll?pageSize=100&pageNum=1`),
+        axios.get(`${API_URL}/api/Category/GetAll?pageSize=100&pageNum=1`),
       ]);
 
       setBrands(brandsRes.data.items || []);
@@ -147,7 +144,7 @@ const AdminProductPage = () => {
         }
 
         await axios.post(
-          "http://localhost:5258/api/product/create",
+          `${API_URL}/api/product/create`,
           {
             productName: formData.name,
             description: formData.description,

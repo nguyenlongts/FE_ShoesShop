@@ -12,6 +12,7 @@ const AdminBrandPage = () => {
     name: "",
     isActive: true,
   });
+  const API_URL = import.meta.env.VITE_API_URL;
   const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
   const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState([]);
@@ -21,7 +22,7 @@ const AdminBrandPage = () => {
   const fetchBrands = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5258/api/Brand/GetAll?pageSize=${pageSize}&pageNum=${pageNumber}`,
+        `${API_URL}/api/Brand/GetAll?pageSize=${pageSize}&pageNum=${pageNumber}`,
         {
           headers,
         }
@@ -57,7 +58,7 @@ const AdminBrandPage = () => {
 
     try {
       await axios.post(
-        "http://localhost:5258/api/Brand/Create",
+        `${API_URL}/api/Brand/Create`,
         {
           name: formData.name,
           isActive: formData.isActive,
@@ -116,7 +117,7 @@ const AdminBrandPage = () => {
       const brand = brands.find((b) => b.brandID === Id);
       if (!brand) return;
       const response = await fetch(
-        `http://localhost:5258/api/Brand/UpdateStatus?id=${Id}`,
+        `${API_URL}/api/Brand/UpdateStatus?id=${Id}`,
         {
           method: "PUT",
           headers,

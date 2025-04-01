@@ -12,17 +12,16 @@ const AdminColorPage = () => {
     colorId: null,
     name: "",
   });
-
-  const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
+  const API_URL = import.meta.env.VITE_API_URL;
+  const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState([]);
   const token = sessionStorage.getItem("token");
   const headers = { Authorization: `Bearer ${token}` };
   const fetchColors = async () => {
     try {
-      // const token = localStorage.getItem("token"); // Lấy token từ localStorage
       const response = await axios.get(
-        `http://localhost:5258/api/Color/GetAll?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+        `${API_URL}/api/Color/GetAll?pageNumber=${pageNumber}&pageSize=${pageSize}`,
         {
           headers,
         }
@@ -55,7 +54,7 @@ const AdminColorPage = () => {
     e.preventDefault();
     try {
       const response = await axios.get(
-        `http://localhost:5258/api/color/GetByName?name=${formData.name}`,
+        `${API_URL}/api/color/GetByName?name=${formData.name}`,
         { headers }
       );
       if (response.data) {
@@ -63,7 +62,7 @@ const AdminColorPage = () => {
         return;
       }
       await axios.post(
-        "http://localhost:5258/api/color",
+        `${API_URL}/api/color`,
         {
           name: formData.name,
           isActive: true,
@@ -79,7 +78,7 @@ const AdminColorPage = () => {
       if (error.response && error.response.status === 404) {
         try {
           await axios.post(
-            "http://localhost:5258/api/color",
+            `${API_URL}/api/color`,
             {
               ...formData,
               isActive: true,
@@ -113,7 +112,7 @@ const AdminColorPage = () => {
       if (!color) return;
 
       await axios.post(
-        `http://localhost:5258/api/color/ChangeStatus?id=${Id}`,
+        `${API_URL}/api/color/ChangeStatus?id=${Id}`,
         {},
         {
           headers,
@@ -174,7 +173,7 @@ const AdminColorPage = () => {
     e.preventDefault();
     try {
       await axios.put(
-        `http://localhost:5258/api/color/Update`,
+        `${API_URL}/api/color/Update`,
         {
           colorId: formData.colorId,
           name: formData.name,
@@ -196,12 +195,9 @@ const AdminColorPage = () => {
   const deleteColor = async (colorId) => {
     try {
       // Gửi yêu cầu xóa tới API
-      await axios.delete(
-        `http://localhost:5258/api/color/Delete?id=${colorId}`,
-        {
-          headers,
-        }
-      );
+      await axios.delete(`${API_URL}/api/color/Delete?id=${colorId}`, {
+        headers,
+      });
       toast.success("Xóa màu sắc thành công");
       fetchColors(); // Lấy lại danh sách màu sắc
     } catch (error) {

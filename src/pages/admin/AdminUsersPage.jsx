@@ -16,11 +16,11 @@ const AdminUsersPage = () => {
     email: "",
     password: "",
   });
-
+  const API_URL = import.meta.env.VITE_API_URL;
   // Fetch users
   const fetchUsers = async () => {
     try {
-      const response = await axios.get("http://localhost:5258/api/User/GetAll");
+      const response = await axios.get(`${API_URL}/api/User/GetAll`);
       console.log(response);
       if (response.data) {
         setUsers(response.data);

@@ -10,10 +10,11 @@ const AdminOrderDetailPage = () => {
   const [updating, setUpdating] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL;
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:5258/api/orders/${id}`);
+        const response = await fetch(`${API_URL}/api/orders/${id}`);
         if (!response.ok) {
           throw new Error("Failed to fetch orders");
         }
@@ -153,7 +154,7 @@ const AdminOrderDetailPage = () => {
 
     try {
       const { data } = await axios.put(
-        `http://localhost:5258/api/orders/update-status`,
+        `${API_URL}/api/orders/update-status`,
         {
           orderId: orderDetails.orderId,
           status: newStatus,

@@ -23,13 +23,12 @@ const AdminOrderPage = () => {
         return "Unknown";
     }
   };
-
-  // Fetch orders from API
+  const API_URL = import.meta.env.VITE_API_URL;
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5258/api/orders?pageNum=1&pageSize=10"
+          `${API_URL}/api/orders?pageNum=1&pageSize=10`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch orders");

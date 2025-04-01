@@ -19,10 +19,11 @@ const AdminProductDetailPage = () => {
   const [existingVariants, setExistingVariants] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const API_URL = import.meta.env.VITE_API_URL;
   async function fetchProductDetails(productId) {
     try {
       const response = await axios.get(
-        `http://localhost:5258/api/ProductDetail/${productId}/details`
+        `${API_URL}/api/ProductDetail/${productId}/details`
       );
 
       return response.data;
@@ -49,12 +50,8 @@ const AdminProductDetailPage = () => {
     const fetchData = async () => {
       try {
         const [colorsRes, sizesRes] = await Promise.all([
-          axios.get(
-            `http://localhost:5258/api/Color/GetAll?pageNumber=1&pageSize=100`
-          ),
-          axios.get(
-            "http://localhost:5258/api/Size/GetAll?pageNumber=1&pageSize=100"
-          ),
+          axios.get(`${API_URL}/api/Color/GetAll?pageNumber=1&pageSize=100`),
+          axios.get(`${API_URL}/api/Size/GetAll?pageNumber=1&pageSize=100`),
         ]);
 
         const activeFilter = (items) => items.filter((item) => item.isActive);
@@ -283,28 +280,12 @@ const AdminProductDetailPage = () => {
       image: null,
     });
 
-    // const handleAddImageField = () => {
-    //   if (variantForm.image.length < 3) {
-    //     setVariantForm({
-    //       ...variantForm,
-    //       images: [...variantForm.image, null],
-    //     });
-    //   }
-    // };
     const handleImageUpload = (e, index) => {
       const file = e.target.files[0];
       if (file) {
         setVariantForm((prev) => ({ ...prev, image: file }));
       }
     };
-
-    // const handleRemoveImageField = (index) => {
-    //   const newImages = variantForm.image.filter((_, i) => i !== index);
-    //   setVariantForm({
-    //     ...variantForm,
-    //     image: newImages,
-    //   });
-    // };
 
     const handleColorChange = (colorId) => {
       setVariantForm((prev) => ({
@@ -319,19 +300,7 @@ const AdminProductDetailPage = () => {
         selectedSize: prev.selectedSize === sizeId ? null : sizeId,
       }));
     };
-    // const handleColorChange = (colorId) => {
-    //   setVariantForm((prev) => ({
-    //     ...prev,
-    //     selectedColor: prev.selectedColors === colorId ? null : colorId,
-    //   }));
-    // };
 
-    // const handleSizeChange = (sizeId) => {
-    //   setVariantForm((prev) => ({
-    //     ...prev,
-    //     selectedSize: prev.selectedSizes === sizeId ? null : sizeId,
-    //   }));
-    // };
     const handleSubmit = async (e) => {
       e.preventDefault();
 
@@ -366,7 +335,7 @@ const AdminProductDetailPage = () => {
           formData.append("Image", variantForm.image);
         }
         console.log(formData);
-        await axios.post("http://localhost:5258/api/ProductDetail", formData, {
+        await axios.post(`${API_URL}/api/ProductDetail`, formData, {
           headers: {
             Accept: "*/*",
           },
