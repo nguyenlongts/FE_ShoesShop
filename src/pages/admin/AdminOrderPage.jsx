@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 
 const AdminOrderPage = () => {
@@ -7,6 +7,10 @@ const AdminOrderPage = () => {
   const [timeFilter, setTimeFilter] = useState("This week");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
+  const [pageSize, setPageSize] = useState(5);
+  const [totalPages, setTotalPages] = useState([]);
+  const [totalOrders, setTotalOrders] = useState(0);
   const getStatusText = (status) => {
     switch (status) {
       case 0:
@@ -34,27 +38,39 @@ const AdminOrderPage = () => {
     return colors[statusCode] || "bg-gray-100 text-gray-800";
   };
   const API_URL = import.meta.env.VITE_API_URL;
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch(
-          `${API_URL}/api/orders?pageNum=1&pageSize=10`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch orders");
-        }
-        const data = await response.json();
-        console.log(data);
-        setOrders(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${API_URL}/api/orders?pageNum=${pageNumber}&pageSize=${pageSize}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch orders");
       }
-    };
-
+      const data = await response.json();
+      setTotalPages(data.totalPages);
+      setTotalOrders(data.totalItems);
+      setOrders(data.items);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [pageNumber, pageSize]);
+  useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
+  const handlePageSizeChange = (e) => {
+    const newSize = parseInt(e.target.value, 10);
+    setPageSize(newSize);
+    setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
+  };
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPageNumber(newPage);
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -107,54 +123,72 @@ const AdminOrderPage = () => {
           ) : orders.length === 0 ? (
             <p>No orders found</p>
           ) : (
-            <table className="w-full">
-              <colgroup>
-                <col className="w-auto" />
-                <col className="w-1/4" />
-
-                <col className="w-1/4" />
-                <col className="w-1/4" />
-              </colgroup>
-              <thead>
-                <tr className="border-b">
-                  <th className="text-center py-3 whitespace-nowrap pr-4">
-                    ID
-                  </th>
-                  <th className="text-center py-4">Amount</th>
-                  <th className="text-center py-4">Status</th>
-                  <th className="text-center py-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.orderId} className="border-b">
-                    <td className="py-4 whitespace-nowrap pr-4 overflow-hidden text-ellipsis">
-                      {order.orderId}
-                    </td>
-
-                    <td className="py-4 text-center">{order.totalPrice}</td>
-                    <td className="py-4 text-center">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
-                          order.status
-                        )}`}
-                      >
-                        {getStatusText(order.status)}
-                      </span>
-                    </td>
-
-                    <td className="py-4 text-center">
-                      <Link
-                        to={`/admin/orders/${order.orderId}`}
-                        className="text-blue-600 hover:underline"
-                      >
-                        Details
-                      </Link>
-                    </td>
+            <>
+              <table className="w-full">
+                <colgroup>
+                  <col className="w-auto" />
+                  <col className="w-1/4" />
+                  <col className="w-1/4" />
+                  <col className="w-1/4" />
+                </colgroup>
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-center py-3 whitespace-nowrap pr-4">
+                      ID
+                    </th>
+                    <th className="text-center py-4">Amount</th>
+                    <th className="text-center py-4">Status</th>
+                    <th className="text-center py-4">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    <tr key={order.orderId} className="border-b">
+                      <td className="py-4 whitespace-nowrap pr-4 overflow-hidden text-ellipsis">
+                        {order.orderId}
+                      </td>
+                      <td className="py-4 text-center">{order.totalPrice}</td>
+                      <td className="py-4 text-center">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
+                            order.status
+                          )}`}
+                        >
+                          {getStatusText(order.status)}
+                        </span>
+                      </td>
+                      <td className="py-4 text-center">
+                        <Link
+                          to={`/admin/orders/${order.orderId}`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          Details
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Pagination */}
+              <div className="flex justify-between items-center mt-6">
+                <button
+                  onClick={() => handlePageChange(pageNumber - 1)}
+                  disabled={pageNumber === 1}
+                  className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
+                >
+                  Prev
+                </button>
+                <span>Page {pageNumber}</span>
+                <button
+                  onClick={() => handlePageChange(pageNumber + 1)}
+                  disabled={pageNumber === totalOrders}
+                  className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
+                >
+                  Next
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>

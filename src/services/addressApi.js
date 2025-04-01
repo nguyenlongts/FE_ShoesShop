@@ -19,7 +19,6 @@ export const getWards = async (districtCode) => {
 
 // Tính phí ship dựa trên khu vực
 export const calculateShippingFee = (provinceCode) => {
-  // Phí ship cơ bản
   const baseFee = 30000;
 
   const highFeeProvinces = ["01", "79", "48"]; // Hà Nội, HCM, Đà Nẵng
