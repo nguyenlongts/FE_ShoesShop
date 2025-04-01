@@ -2,12 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import {
-  getProvinces,
-  getDistricts,
-  getWards,
-  calculateShippingFee,
-} from "../services/addressApi";
 import { ORDER_STATUS } from "../data/orderStatus";
 const API_URL = import.meta.env.VITE_API_URL;
 const CheckoutPage = () => {
@@ -15,15 +9,13 @@ const CheckoutPage = () => {
   const [cartItems, setCartItems] = useState([]);
   const [appliedVouchers, setAppliedVouchers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [provinces, setProvinces] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [wards, setWards] = useState([]);
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [shippingFee, setShippingFee] = useState(0);
   const [checkoutItems, setCheckoutItems] = useState([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState([]);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const userId = JSON.parse(sessionStorage.getItem("user")).userId;
   // Form state
   const [formData, setFormData] = useState({
@@ -36,6 +28,8 @@ const CheckoutPage = () => {
     ward: "",
     note: "",
     paymentMethod: "cod", // cod, banking, momo
+    addressList: [],
+    newAddress: "",
   });
 
   const subtotal = cartItems.reduce(
@@ -63,13 +57,11 @@ const CheckoutPage = () => {
       }
     };
     fetchCartItems();
-    // Load applied vouchers
     const savedVouchers = localStorage.getItem("appliedVouchers");
     if (savedVouchers) {
       setAppliedVouchers(JSON.parse(savedVouchers));
     }
 
-    //Load user info and saved addresses
     const loadUserInfo = async () => {
       try {
         const token = sessionStorage.getItem("token");
@@ -81,7 +73,6 @@ const CheckoutPage = () => {
           return;
         }
 
-        // Lấy thông tin user
         const userResponse = await axios.get(
           `${API_URL}/api/User/UserInfo/${user.userId}`,
           {
@@ -90,24 +81,15 @@ const CheckoutPage = () => {
         );
         console.log(userResponse);
         if (userResponse.data) {
+          const addressList = userResponse.data.shippingAddress || [];
           setFormData((prev) => ({
             ...prev,
             fullName: userResponse.data.fullName || "",
             email: userResponse.data.email || "",
             phone: userResponse.data.phone || "",
+            address: addressList.length > 0 ? addressList[0] : "",
+            addressList: addressList,
           }));
-
-          // Lấy danh sách địa chỉ đã lưu
-          const addressesResponse = await axios.get(
-            `http://localhost:8081/saleShoes/addresses/user/${user.id}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-
-          if (addressesResponse.data?.result) {
-            setSavedAddresses(addressesResponse.data.result);
-          }
         }
       } catch (error) {
         console.error("Error loading user info:", error);
@@ -119,58 +101,10 @@ const CheckoutPage = () => {
   }, [navigate]);
 
   useEffect(() => {
-    // Load tỉnh/thành phố
-    const loadProvinces = async () => {
-      try {
-        const data = await getProvinces();
-        setProvinces(data);
-      } catch (error) {
-        toast.error("Không thể tải danh sách tỉnh thành");
-      }
-    };
-    loadProvinces();
-  }, []);
-
-  useEffect(() => {
-    const loadDistricts = async () => {
-      if (selectedProvince) {
-        try {
-          const data = await getDistricts(selectedProvince);
-          setDistricts(data);
-          setSelectedDistrict("");
-          setWards([]);
-          const fee = calculateShippingFee(selectedProvince);
-          setShippingFee(fee);
-        } catch (error) {
-          toast.error("Không thể tải danh sách quận huyện");
-        }
-      }
-    };
-    loadDistricts();
-  }, [selectedProvince]);
-
-  // Load phường/xã khi chọn quận/huyện
-  useEffect(() => {
-    const loadWards = async () => {
-      if (selectedDistrict) {
-        try {
-          const data = await getWards(selectedDistrict);
-          setWards(data);
-        } catch (error) {
-          toast.error("Không thể tải danh sách phường xã");
-        }
-      }
-    };
-    loadWards();
-  }, [selectedDistrict]);
-
-  useEffect(() => {
-    // Load checkout items
     const savedCheckoutItems = localStorage.getItem("checkoutItems");
     if (savedCheckoutItems) {
       setCheckoutItems(JSON.parse(savedCheckoutItems));
     } else {
-      // Nếu không có checkoutItems, lấy từ cart
       const savedCart = localStorage.getItem("cart");
       if (savedCart) {
         setCheckoutItems(JSON.parse(savedCart));
@@ -184,9 +118,13 @@ const CheckoutPage = () => {
       ...prev,
       [name]: value,
     }));
+    if (name === "address" && value === "new") {
+      setShowNewAddressForm(true);
+    } else if (name === "address") {
+      setShowNewAddressForm(false);
+    }
   };
 
-  // Xử lý khi chọn địa chỉ đã lưu
   const handleSavedAddressSelect = async (address) => {
     try {
       // Lấy chi tiết địa chỉ
@@ -216,30 +154,30 @@ const CheckoutPage = () => {
     }
   };
 
-  // Lưu địa chỉ mới
   const saveNewAddress = async () => {
     try {
       const token = localStorage.getItem("token");
       const user = JSON.parse(localStorage.getItem("user"));
 
       const addressData = {
-        userId: user.id,
-        address: `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`,
-        provinceCode: selectedProvince,
-        districtCode: selectedDistrict,
-        wardCode: formData.wardCode,
-        isDefault: savedAddresses.length === 0,
+        userId: user.userId,
+        fullAddress: formData.newAddress,
+        isDefault: savedAddresses.length === 0 || formData.makeDefault,
       };
 
-      await axios.post(
-        "http://localhost:8081/saleShoes/addresses",
-        addressData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await axios.post("http://localhost:5258/api/address/add", addressData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Đã lưu địa chỉ mới");
 
-      toast.success("Đã lưu địa chỉ mới");
+        setFormData((prev) => ({
+          ...prev,
+          addressList: [...prev.addressList, formData.newAddress],
+          address: formData.newAddress, // Set the newly created address as selected
+        }));
+        setShowNewAddressForm(false);
+      }
     } catch (error) {
       console.error("Error saving address:", error);
       toast.error("Không thể lưu địa chỉ");
@@ -247,7 +185,6 @@ const CheckoutPage = () => {
   };
 
   const validateForm = () => {
-    // Kiểm tra các trường bắt buộc
     if (!formData.fullName) {
       toast.error("Vui lòng nhập họ tên");
       return false;
@@ -260,20 +197,14 @@ const CheckoutPage = () => {
       toast.error("Vui lòng nhập số điện thoại");
       return false;
     }
-    if (!formData.address) {
-      toast.error("Vui lòng nhập địa chỉ");
+    if (!formData.address && (!showNewAddressForm || !formData.newAddress)) {
+      toast.error("Vui lòng chọn hoặc nhập địa chỉ giao hàng");
       return false;
     }
-    if (!selectedProvince) {
-      toast.error("Vui lòng chọn Tỉnh/Thành");
-      return false;
-    }
-    if (!selectedDistrict) {
-      toast.error("Vui lòng chọn Quận/Huyện");
-      return false;
-    }
-    if (!formData.ward) {
-      toast.error("Vui lòng chọn Phường/Xã");
+
+    // If new address form is shown, validate that address is entered
+    if (showNewAddressForm && !formData.newAddress) {
+      toast.error("Vui lòng nhập địa chỉ mới");
       return false;
     }
 
@@ -294,7 +225,6 @@ const CheckoutPage = () => {
     return true;
   };
 
-  // Confirmation Modal Component
   const ConfirmModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
@@ -335,79 +265,98 @@ const CheckoutPage = () => {
         quantity: item.quantity,
         priceAtOrder: item.price,
       }));
-      console.log(orderItems);
-      // Tạo địa chỉ giao hàng
-      const shippingAddress = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`;
 
-      const orderResponse = await axios.post(`${API_URL}/api/orders`, {
-        userId: user.userId,
-        orderItems: orderItems,
-        shippingAddress: shippingAddress,
-      });
+      const shippingAddress = showNewAddressForm
+        ? formData.newAddress
+        : formData.address;
 
-      if ((orderResponse.status = 200)) {
-        const orderId = orderResponse.data;
-        if (localStorage.getItem("token")) {
-          await axios.post(
-            "http://localhost:8081/saleShoes/users/addresses",
-            {
-              address: shippingAddress,
-              provinceCode: selectedProvince,
-              districtCode: selectedDistrict,
-              wardCode: formData.ward,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
-          );
-        }
+      const totalAmount = orderItems.reduce(
+        (total, item) => total + item.quantity * item.priceAtOrder,
+        0
+      );
 
-        // Tính tổng tiền của đơn hàng
-        const totalAmount = orderItems.reduce(
-          (total, item) => total + item.quantity * item.priceAtOrder,
-          0
-        );
+      if (formData.paymentMethod === "banking") {
+        try {
+          const tempOrderId = Date.now().toString();
 
-        // Nếu thanh toán bằng banking, chuyển đến trang thanh toán VNPAY
-        if (formData.paymentMethod === "banking") {
           const paymentResponse = await axios.post(
             `${API_URL}/api/VNPay/create-payment`,
             {
               amount: totalAmount,
-              orderDescription: `Thanh toán đơn hàng #${orderId}`,
+              orderDescription: `Thanh toán đơn hàng #${tempOrderId}`,
               orderType: "billpayment",
               bankCode: "",
             }
           );
 
           if (paymentResponse.data?.paymentUrl) {
-            window.location.href = paymentResponse.data.paymentUrl;
-          }
-        }
+            sessionStorage.setItem(
+              "pendingOrder",
+              JSON.stringify({
+                userId: user.userId,
+                orderItems: orderItems,
+                shippingAddress: shippingAddress,
+                paymentMethod: formData.paymentMethod,
+                newAddress: showNewAddressForm ? formData.newAddress : null,
+                makeDefault: formData.makeDefault,
+              })
+            );
 
-        // Chuyển đến trang thành công nếu thanh toán COD hoặc nếu không có URL thanh toán
-        navigate(`/order-success/${orderId}`);
-        toast.success("Đặt hàng thành công!");
+            window.location.href = paymentResponse.data.paymentUrl;
+            return;
+          }
+        } catch (error) {
+          console.error("Error processing payment:", error);
+          toast.error("Không thể xử lý thanh toán. Vui lòng thử lại sau.");
+          setLoading(false);
+          setShowConfirmModal(false);
+          return;
+        }
+      } else {
+        try {
+          const orderResponse = await axios.post(`${API_URL}/api/orders`, {
+            userId: user.userId,
+            orderItems: orderItems,
+            shippingAddress: shippingAddress,
+          });
+
+          if (orderResponse.status === 200) {
+            const orderId = orderResponse.data;
+            if (showNewAddressForm && formData.newAddress) {
+              await saveNewAddress();
+            }
+
+            try {
+              await axios.delete(
+                `${API_URL}/api/Cart/ClearCart/${user.userId}`
+              );
+            } catch (clearCartError) {
+              console.error("Error clearing cart:", clearCartError);
+              // Continue with order success even if cart clearing fails
+            }
+            navigate(`/order/${orderId}`);
+            toast.success("Đặt hàng thành công!");
+          }
+        } catch (orderError) {
+          console.error("Error creating order:", orderError);
+          toast.error(
+            orderError.response?.data?.message || "Có lỗi xảy ra khi đặt hàng"
+          );
+        }
       }
     } catch (error) {
-      console.error("Error placing order:", error);
-      toast.error(
-        error.response?.data?.message || "Có lỗi xảy ra khi đặt hàng"
-      );
+      console.error("Error in checkout process:", error);
+      toast.error("Có lỗi xảy ra trong quá trình thanh toán");
     } finally {
       setLoading(false);
       setShowConfirmModal(false);
     }
   };
 
-  // Xử lý khi submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    // Hỏi người dùng có muốn lưu địa chỉ mới không
     if (window.confirm("Bạn có muốn lưu địa chỉ này cho lần sau không?")) {
       await saveNewAddress();
     }
@@ -494,66 +443,20 @@ const CheckoutPage = () => {
 
                 <div>
                   <label className="block mb-1">Địa chỉ</label>
-                  <input
-                    type="text"
+                  <select
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block mb-1">Tỉnh/Thành</label>
-                    <select
-                      name="province"
-                      value={selectedProvince}
-                      onChange={(e) => setSelectedProvince(e.target.value)}
-                      className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                    >
-                      <option value="">Chọn Tỉnh/Thành</option>
-                      {provinces.map((province) => (
-                        <option key={province.code} value={province.code}>
-                          {province.name}
+                  >
+                    <option value="">Chọn địa chỉ</option>
+                    {formData.addressList &&
+                      formData.addressList.map((address, index) => (
+                        <option key={index} value={address}>
+                          {address}
                         </option>
                       ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block mb-1">Quận/Huyện</label>
-                    <select
-                      name="district"
-                      value={selectedDistrict}
-                      onChange={(e) => setSelectedDistrict(e.target.value)}
-                      className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                      disabled={!selectedProvince}
-                    >
-                      <option value="">Chọn Quận/Huyện</option>
-                      {districts.map((district) => (
-                        <option key={district.code} value={district.code}>
-                          {district.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block mb-1">Phường/Xã</label>
-                    <select
-                      name="ward"
-                      value={formData.ward}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                      disabled={!selectedDistrict}
-                    >
-                      <option value="">Chọn Phường/Xã</option>
-                      {wards.map((ward) => (
-                        <option key={ward.code} value={ward.code}>
-                          {ward.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  </select>
                 </div>
 
                 <div>
@@ -637,7 +540,7 @@ const CheckoutPage = () => {
                   className="flex gap-4"
                 >
                   <img
-                    src={`http://localhost:5258/Uploads/${item.imageUrl}`}
+                    src={`${API_URL}/Uploads/${item.imageUrl}`}
                     alt={item.name}
                     className="w-20 h-20 object-cover rounded"
                   />

@@ -14,41 +14,6 @@ const Header = () => {
     if (userData) {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
-      // Nếu không có thông tin đầy đủ, fetch lại từ API
-      // if (!parsedUser.fullName) {
-      //   const fetchUserInfo = async () => {
-      //     try {
-      //       // Lấy sub (username) từ token
-      //       const tokenParts = parsedUser.token.split(".");
-      //       const payload = JSON.parse(atob(tokenParts[1]));
-      //       const username = payload.Username;
-
-      //       // Gọi API get user by username
-      //       const response = await axios.get(
-      //         `http://localhost:8081/saleShoes/users/me`,
-      //         {
-      //           headers: {
-      //             Authorization: `Bearer ${parsedUser.token}`,
-      //           },
-      //         }
-      //       );
-
-      //       if (response.data?.result) {
-      //         const updatedUserData = {
-      //           ...parsedUser,
-      //           ...response.data.result,
-      //           username: username, // Đảm bảo giữ username
-      //         };
-      //         localStorage.setItem("user", JSON.stringify(updatedUserData));
-      //         setUser(updatedUserData);
-      //       }
-      //     } catch (error) {
-      //       console.error("Error fetching user info:", error);
-      //     }
-      //   };
-
-      //   fetchUserInfo();
-      // }
     }
   }, []);
 

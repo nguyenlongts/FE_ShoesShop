@@ -92,9 +92,7 @@ const OrderDetail = () => {
     });
   };
 
-  // Kiểm tra xem đơn hàng có thể hủy được không
   const canCancelOrder = (status) => {
-    // Chỉ cho phép hủy đơn khi đơn đang ở trạng thái chờ xác nhận (0) hoặc đang xử lý (1)
     return status === 0 || status === 1;
   };
 
@@ -188,12 +186,19 @@ const OrderDetail = () => {
                     <div className="flex items-center gap-3">
                       <div className="w-16 h-16 bg-gray-200 flex items-center justify-center">
                         <img
-                          src={`http://localhost:5258/Uploads/${item.productDetail.imageUrl}`}
+                          src={`${API_URL}/Uploads/${item.image}`}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <span>Product #{item.productDetail.productDetailId}</span>
+                      <div>
+                        <span className="block font-medium">
+                          {item.productName}
+                        </span>
+                        <span className="block text-sm text-gray-500">
+                          Size: {item.sizeName} | Color: {item.colorName}
+                        </span>
+                      </div>
                     </div>
                   </td>
                   <td className="text-center py-4 px-4">{item.quantity}</td>

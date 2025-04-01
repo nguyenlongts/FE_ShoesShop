@@ -31,7 +31,6 @@ const AdminOrderDetailPage = () => {
     fetchOrderDetails();
   }, [id]);
 
-  // Chuyển đổi status code sang text
   const getStatusText = (statusCode) => {
     const statuses = {
       0: "Pending",
@@ -129,15 +128,15 @@ const AdminOrderDetailPage = () => {
   };
   const getStatusColor = (statusCode) => {
     const colors = {
-      0: "bg-yellow-100 text-yellow-800", // Pending
-      1: "bg-blue-100 text-blue-800", // Processing
-      2: "bg-purple-100 text-purple-800", // Shipped
-      3: "bg-green-100 text-green-800", // Delivered
-      4: "bg-red-100 text-red-800", // Cancelled
+      0: "bg-yellow-100 text-yellow-800",
+      1: "bg-blue-100 text-blue-800",
+      2: "bg-purple-100 text-purple-800",
+      3: "bg-green-100 text-green-800",
+      4: "bg-red-100 text-red-800",
     };
     return colors[statusCode] || "bg-gray-100 text-gray-800";
   };
-  // Format date
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN", {
@@ -222,7 +221,9 @@ const AdminOrderDetailPage = () => {
           </div>
           <div>
             <p className="text-sm text-gray-600">Total Amount</p>
-            <p className="font-medium">${orderDetails.totalPrice.toFixed(2)}</p>
+            <p className="font-medium">
+              {orderDetails.totalPrice.toFixed(2)} đ
+            </p>
           </div>
         </div>
       </div>
@@ -239,7 +240,7 @@ const AdminOrderDetailPage = () => {
           <table className="w-full">
             <thead>
               <tr className="bg-pink-50">
-                <th className="text-left py-3 px-4">Product ID</th>
+                <th className="text-left py-3 px-4">Product</th>
                 <th className="text-center py-3 px-4">Quantity</th>
                 <th className="text-center py-3 px-4">Unit Price</th>
                 <th className="text-center py-3 px-4">Total</th>
@@ -250,30 +251,40 @@ const AdminOrderDetailPage = () => {
                 <tr key={item.orderItemId}>
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
-                      {/* Placeholder for product image */}
                       <div className="w-16 h-16 bg-gray-200 flex items-center justify-center">
-                        <span className="text-xs text-gray-500">No image</span>
+                        <img
+                          src={`${API_URL}/Uploads/${item.image}`}
+                          className="h-full w-full object-cover object-center group-hover:opacity-75"
+                        />
                       </div>
-                      <span>Product #{item.productDetailId}</span>
+                      <div>
+                        <span className="block font-medium">
+                          {item.productName}
+                        </span>
+                        <span className="block text-sm text-gray-500">
+                          Size: {item.sizeName} | Color: {item.colorName}
+                        </span>
+                      </div>
                     </div>
                   </td>
                   <td className="text-center py-4 px-4">{item.quantity}</td>
                   <td className="text-center py-4 px-4">
-                    ${item.unitPrice.toFixed(2)}
+                    {item.unitPrice.toFixed(2)} đ
                   </td>
                   <td className="text-center py-4 px-4">
-                    ${item.total.toFixed(2)}
+                    {item.total.toFixed(2)} đ
                   </td>
                 </tr>
               ))}
             </tbody>
+
             <tfoot>
               <tr className="border-t">
                 <td colSpan="3" className="text-right py-4 px-4 font-medium">
                   Total:
                 </td>
                 <td className="text-center py-4 px-4 font-medium">
-                  ${orderDetails.totalPrice.toFixed(2)}
+                  {orderDetails.totalPrice.toFixed(2)} đ
                 </td>
               </tr>
             </tfoot>

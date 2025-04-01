@@ -41,6 +41,7 @@ function App() {
     <>
       <Toaster position="top-right" />
       <Routes>
+        <Route path="/payment-return" element={<VnPayReturn />} />
         {/* Auth Routes - No Header/Footer */}
         <Route path="/signin" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

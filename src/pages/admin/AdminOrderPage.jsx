@@ -23,6 +23,16 @@ const AdminOrderPage = () => {
         return "Unknown";
     }
   };
+  const getStatusColor = (statusCode) => {
+    const colors = {
+      0: "bg-yellow-100 text-yellow-800",
+      1: "bg-blue-100 text-blue-800",
+      2: "bg-purple-100 text-purple-800",
+      3: "bg-green-100 text-green-800",
+      4: "bg-red-100 text-red-800",
+    };
+    return colors[statusCode] || "bg-gray-100 text-gray-800";
+  };
   const API_URL = import.meta.env.VITE_API_URL;
   useEffect(() => {
     const fetchOrders = async () => {
@@ -49,9 +59,6 @@ const AdminOrderPage = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-medium">Order</h1>
-        <div className="text-sm text-gray-500">
-          View, create, update, delete and manage
-        </div>
       </div>
 
       {/* Search Bar */}
@@ -104,7 +111,7 @@ const AdminOrderPage = () => {
               <colgroup>
                 <col className="w-auto" />
                 <col className="w-1/4" />
-                <col className="w-1/4" />
+
                 <col className="w-1/4" />
                 <col className="w-1/4" />
               </colgroup>
@@ -113,7 +120,6 @@ const AdminOrderPage = () => {
                   <th className="text-center py-3 whitespace-nowrap pr-4">
                     ID
                   </th>
-                  <th className="text-center py-4">Address</th>
                   <th className="text-center py-4">Amount</th>
                   <th className="text-center py-4">Status</th>
                   <th className="text-center py-4">Actions</th>
@@ -125,15 +131,18 @@ const AdminOrderPage = () => {
                     <td className="py-4 whitespace-nowrap pr-4 overflow-hidden text-ellipsis">
                       {order.orderId}
                     </td>
-                    <td className="py-4 text-center">
-                      {order.shippingAddress}
-                    </td>
+
                     <td className="py-4 text-center">{order.totalPrice}</td>
                     <td className="py-4 text-center">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm ${getStatusColor(
+                          order.status
+                        )}`}
+                      >
                         {getStatusText(order.status)}
                       </span>
                     </td>
+
                     <td className="py-4 text-center">
                       <Link
                         to={`/admin/orders/${order.orderId}`}
