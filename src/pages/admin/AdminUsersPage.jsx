@@ -9,6 +9,9 @@ const AdminUsersPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [totalPages, setTotalPages] = useState([]);
   const [formData, setFormData] = useState({
     username: "",
     fullName: "",
@@ -19,26 +22,44 @@ const AdminUsersPage = () => {
   const API_URL = import.meta.env.VITE_API_URL;
   // Fetch users
   const fetchUsers = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/api/User/GetAll`);
+      const response = await axios.get(
+        `${API_URL}/api/User/GetAll?pageSize=${pageSize}&pageNum=${pageNumber}`
+        //`http://localhost:5258/api/User/GetAll?pageSize=${pageSize}&pageNum=${pageNumber}`
+      );
       console.log(response);
       if (response.data) {
-        setUsers(response.data);
+        setUsers(response.data.items);
+        setTotalPages(response.data.totalPages);
       } else {
-        setUsers([]);
+        throw new Error("Dữ liệu trả về không hợp lệ");
       }
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("Lỗi khi tải danh sách người dùng:", error);
       toast.error("Không thể tải danh sách người dùng");
       setUsers([]);
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [pageSize, pageNumber]);
+
+  const handlePageSizeChange = (e) => {
+    const newSize = parseInt(e.target.value, 10);
+    setPageSize(newSize);
+    setPageNumber(1);
+  };
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPageNumber(newPage);
+      //fetchUsers(newPage);
+    }
+  };
 
   // Create user
   const handleCreate = async (e) => {
@@ -83,23 +104,11 @@ const AdminUsersPage = () => {
     try {
       const user = users.find((u) => u.userId === userId);
       if (!user) return;
+      await axios.put(`${API_URL}/api/user/UpdateStatus?id=${userId}`);
 
-      // if (user.active) {
-      //   // Nếu đang active thì gọi API delete để deactivate
-      //   await axios.delete(`http://localhost:8081/saleShoes/users/${userId}`);
-      // } else {
-      //   // Nếu đang inactive thì gọi API moveOn để activate
-      //   await axios.post(`http://localhost:8081/saleShoes/users/moveon/${userId}`);
-      // }
-
-      await axios.post(
-        `http://localhost:8081/saleShoes/users/moveon/${userId}`
-      );
-
-      // Cập nhật state local
       setUsers((prevUsers) =>
         prevUsers.map((u) =>
-          u.userId === userId ? { ...u, active: !u.active } : u
+          u.userId === userId ? { ...u, isActive: !u.isActive } : u
         )
       );
 
@@ -288,7 +297,19 @@ const AdminUsersPage = () => {
           </div>
         </div>
       </div>
-
+      <div>
+        <label htmlFor="pageSize">Page Size:</label>
+        <select
+          id="pageSize"
+          value={pageSize}
+          onChange={handlePageSizeChange}
+          className="border p-2 rounded-md"
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+        </select>
+      </div>
       {/* Users Table */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-4">
@@ -318,26 +339,24 @@ const AdminUsersPage = () => {
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user.id} className="border-b">
+                  <tr key={user.userId} className="border-b">
                     <td className="py-4">
-                      {user.id.slice(0, 4) + "..." + user.id.slice(-4)}
+                      {user.userId.slice(0, 4) + "..." + user.userId.slice(-4)}
                     </td>
-                    <td className="py-4">
-                      {user.firstName + " " + user.lastName}
-                    </td>
+                    <td className="py-4">{user.fullName}</td>
                     <td className="py-4">{user.email}</td>
-                    <td className="py-4">{user.phoneNumber}</td>
+                    <td className="py-4">{user.phone}</td>
                     <td className="py-4">
                       <div className="flex justify-center">
                         <button
                           onClick={() => handleToggleStatus(user.userId)}
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                            user.active ? "bg-green-500" : "bg-gray-300"
+                            user.isActive ? "bg-green-500" : "bg-gray-300"
                           }`}
                         >
                           <span
                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              user.active ? "translate-x-6" : "translate-x-1"
+                              user.isActive ? "translate-x-6" : "translate-x-1"
                             }`}
                           />
                         </button>
@@ -383,7 +402,23 @@ const AdminUsersPage = () => {
           </table>
         </div>
       </div>
-
+      <div className="flex justify-between items-center mt-6">
+        <button
+          onClick={() => handlePageChange(pageNumber - 1)}
+          disabled={pageNumber === 1}
+          className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
+        >
+          Prev
+        </button>
+        <span>Page {pageNumber}</span>
+        <button
+          onClick={() => handlePageChange(pageNumber + 1)}
+          disabled={pageNumber === totalPages}
+          className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md"
+        >
+          Next
+        </button>
+      </div>
       {/* Modals */}
       {showCreateModal && <CreateModal />}
       {showEditModal && <EditModal />}

@@ -63,7 +63,7 @@ const AdminOrderPage = () => {
   const handlePageSizeChange = (e) => {
     const newSize = parseInt(e.target.value, 10);
     setPageSize(newSize);
-    setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
+    setPageNumber(1);
   };
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
