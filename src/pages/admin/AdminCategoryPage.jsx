@@ -9,8 +9,8 @@ const AdminCategoryPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({
-    Name: "",
-    isActive: true,
+    cateID: null,
+    name: "",
   });
   const API_URL = import.meta.env.VITE_API_URL;
   const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
@@ -30,7 +30,24 @@ const AdminCategoryPage = () => {
       toast.error("Không thể tải danh sách danh mục");
     }
   };
+  const handleRefreshToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      const response = await axios.post(`${API_URL}/api/Auth/refresh`, {
+        refreshToken: refreshToken,
+        userId: JSON.parse(sessionStorage.getItem("user") || "{}").userId,
+      });
 
+      if (response.data.accessToken) {
+        sessionStorage.setItem("accessToken", response.data.accessToken);
+        return true;
+      }
+    } catch (error) {
+      console.error("Lỗi khi làm mới token:", error);
+    }
+
+    return false;
+  };
   useEffect(() => {
     fetchCategories();
   }, [pageSize, pageNumber]);
@@ -64,7 +81,6 @@ const AdminCategoryPage = () => {
       setFormData({ name: "", active: true });
       fetchCategories();
     } catch (error) {
-      // Check if the error is due to category already existing
       if (error.response) {
         if (
           error.response.data &&
@@ -81,26 +97,38 @@ const AdminCategoryPage = () => {
       }
     }
   };
-  // Create category
 
   // Update category
   const handleUpdate = async (e) => {
+    const currentCate = categories.find((c) => c.cateID === formData.cateID);
+    const isActive = currentCate?.isActive;
+    const token = sessionStorage.getItem("accessToken");
+    const headers = { Authorization: `Bearer ${token}` };
     e.preventDefault();
     try {
-      await axios.patch(
-        `http://localhost:8081/saleShoes/categories/${editingCategory.id}`,
+      await axios.put(
+        `${API_URL}/api/category/update`,
         {
-          ...formData,
-          active: editingCategory.active,
-        }
+          cateID: formData.cateID,
+          name: formData.name,
+          isActive: isActive,
+        },
+        { headers }
       );
       toast.success("Cập nhật danh mục thành công");
       setShowEditModal(false);
       setEditingCategory(null);
-      setFormData({ name: "", active: true });
+      setFormData({ name: "", cateID: null });
       fetchCategories();
     } catch (error) {
-      console.error("Error updating category:", error);
+      if (error.response?.status === 401) {
+        const isRefreshed = await handleRefreshToken();
+
+        if (isRefreshed) return fetchCategories();
+        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      }
+
+      console.error("Error updating color:", error);
       toast.error("Không thể cập nhật danh mục");
     }
   };
@@ -275,7 +303,10 @@ const AdminCategoryPage = () => {
                           className="p-1 hover:text-blue-600"
                           onClick={() => {
                             setEditingCategory(category);
-                            setFormData({ name: category.name });
+                            setFormData({
+                              cateID: category.cateID,
+                              name: category.name,
+                            });
                             setShowEditModal(true);
                           }}
                         >

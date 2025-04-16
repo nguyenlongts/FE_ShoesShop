@@ -30,24 +30,26 @@ const LoginPage = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            "Accept-Charset": "UTF-8",
           },
         }
       );
-
-      if (data?.token) {
-        processLoginToken(data.token);
+      const tokens = data.response;
+      if (tokens?.accessToken) {
+        processLoginToken(tokens.accessToken, tokens.refreshToken);
+      } else {
+        throw new Error("Token không hợp lệ");
       }
     } catch (error) {
       handleLoginError(error);
     }
   };
 
-  const processLoginToken = (token) => {
+  const processLoginToken = (accessToken, refreshToken) => {
     try {
-      const payload = jwtDecode(token);
+      const payload = jwtDecode(accessToken);
 
       const isAdmin = payload.role === "admin";
+      console.log(isAdmin);
       const isEmailConfirmed = payload.email_confirm.toLowerCase() === "true";
 
       if (!isEmailConfirmed) {
@@ -59,12 +61,13 @@ const LoginPage = () => {
         username: payload.Username || "",
         email: payload.Email || "",
         phone: payload.Phone || "",
-        address: payload.Address || "", // Sẽ không bị lỗi font nữa
+        address: payload.Address || "",
         userId: payload.UserId,
         role: isAdmin ? "ADMIN" : "USER",
       };
 
-      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
       sessionStorage.setItem("user", JSON.stringify(userInfo));
 
       toast.success("Đăng nhập thành công");

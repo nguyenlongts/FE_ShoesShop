@@ -9,27 +9,21 @@ const AdminLayout = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Sử dụng useLayoutEffect để kiểm tra auth trước khi render
   useLayoutEffect(() => {
     checkAuth();
   }, [location.pathname]);
 
   const checkAuth = () => {
     setIsLoading(true);
-    const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
+    const token = sessionStorage.getItem("accessToken");
 
-    if (!token || !userStr) {
+    if (!token) {
       navigate("/signin", { replace: true });
       setIsLoading(false);
       return;
     }
 
     try {
-      const userData = JSON.parse(userStr);
-      if (!userData || !userData.id) {
-        throw new Error("Invalid user data");
-      }
       setUser(userData);
       setIsAuthenticated(true);
     } catch (error) {
@@ -40,7 +34,6 @@ const AdminLayout = () => {
     }
     setIsLoading(false);
   };
-  // useEffect(() => {
   //   const token = localStorage.getItem("token");
   //   const userStr = localStorage.getItem("user");
 

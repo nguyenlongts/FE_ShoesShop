@@ -5,7 +5,7 @@ import { Navigate } from "react-router-dom";
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const token = sessionStorage.getItem("token");
+  const token = sessionStorage.getItem("accessToken");
 
   if (!token) {
     return <Navigate to="/signin" state={{ from: location }} replace />;

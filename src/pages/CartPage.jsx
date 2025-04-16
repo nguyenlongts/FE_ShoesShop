@@ -12,8 +12,7 @@ const CartPage = () => {
   const [appliedVouchers, setAppliedVouchers] = useState([]);
   const [voucherError, setVoucherError] = useState("");
   const [maxQuantity, setMaxQuantity] = useState(null);
-  const API_URL = import.meta.env.VITE_API_URL;
-  // Tính tổng tiền trước khi áp dụng voucher
+
   const subtotal = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0

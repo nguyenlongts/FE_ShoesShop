@@ -9,8 +9,8 @@ const AdminBrandPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingBrand, setEditingBrand] = useState(null);
   const [formData, setFormData] = useState({
+    brandID: null,
     name: "",
-    isActive: true,
   });
   const API_URL = import.meta.env.VITE_API_URL;
   const [pageNumber, setPageNumber] = useState(1); // Số trang hiện tại
@@ -36,14 +36,31 @@ const AdminBrandPage = () => {
       toast.error("Không thể tải danh sách thương hiệu");
     }
   };
+  const handleRefreshToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      const response = await axios.post(`${API_URL}/api/Auth/refresh`, {
+        refreshToken: refreshToken,
+        userId: JSON.parse(sessionStorage.getItem("user") || "{}").userId,
+      });
 
+      if (response.data.accessToken) {
+        sessionStorage.setItem("accessToken", response.data.accessToken);
+        return true;
+      }
+    } catch (error) {
+      console.error("Lỗi khi làm mới token:", error);
+    }
+
+    return false;
+  };
   useEffect(() => {
     fetchBrands();
   }, [pageSize, pageNumber]);
   const handlePageSizeChange = (e) => {
     const newSize = parseInt(e.target.value, 10);
     setPageSize(newSize);
-    setPageNumber(1); // Reset lại trang về 1 khi thay đổi kích thước trang
+    setPageNumber(1);
   };
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -71,7 +88,6 @@ const AdminBrandPage = () => {
       setFormData({ name: "", isActive: true });
       fetchBrands();
     } catch (error) {
-      // Check if the error is due to category already existing
       if (error.response) {
         if (
           error.response.data &&
@@ -91,22 +107,37 @@ const AdminBrandPage = () => {
 
   // Update brand
   const handleUpdate = async (e) => {
+    const currentBrand = brands.find((b) => b.brandID === formData.brandID);
+    const isActive = currentBrand?.isActive;
+    const token = sessionStorage.getItem("accessToken");
+    const headers = { Authorization: `Bearer ${token}` };
     e.preventDefault();
     try {
-      await axios.patch(
-        `http://localhost:8081/saleShoes/brands/${editingBrand.id}`,
+      await axios.put(
+        `${API_URL}/api/Brand/Update`,
         {
+          brandID: formData.brandID,
           name: formData.name,
-          active: editingBrand.active,
+          isActive: isActive,
+        },
+        {
+          headers,
         }
       );
       toast.success("Cập nhật thương hiệu thành công");
       setShowEditModal(false);
       setEditingBrand(null);
-      setFormData({ name: "", active: true });
+      setFormData({ name: "", brandID: "" });
       fetchBrands();
     } catch (error) {
-      console.error("Error updating brand:", error);
+      if (error.response?.status === 401) {
+        const isRefreshed = await handleRefreshToken();
+
+        if (isRefreshed) return fetchBrands();
+        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      }
+
+      console.error("Error updating color:", error);
       toast.error("Không thể cập nhật thương hiệu");
     }
   };
@@ -130,7 +161,7 @@ const AdminBrandPage = () => {
         return;
       }
 
-      fetchBrands(); // Fetch lại dữ liệu sau khi cập nhật
+      fetchBrands();
     } catch (error) {
       console.error("Lỗi khi gọi API:", error);
     }
@@ -300,7 +331,10 @@ const AdminBrandPage = () => {
                           className="p-1 hover:text-blue-600"
                           onClick={() => {
                             setEditingBrand(brand);
-                            setFormData({ name: brand.name });
+                            setFormData({
+                              brandID: brand.brandID,
+                              name: brand.name,
+                            });
                             setShowEditModal(true);
                           }}
                         >

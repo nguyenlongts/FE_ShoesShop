@@ -203,14 +203,6 @@ const Header = () => {
           <img src={logo2} alt="Nike Logo" className="h-20" />
         </Link>
 
-        <nav className="flex gap-8">
-          <Link to="/new">New & Featured</Link>
-          <Link to="/men">Men</Link>
-          <Link to="/women">Women</Link>
-          <Link to="/kids">Kids</Link>
-          <Link to="/sale">Sale</Link>
-        </nav>
-
         <div className="flex items-center gap-4">
           <div className="relative">
             <input
@@ -221,22 +213,7 @@ const Header = () => {
               className="bg-gray-100 rounded-full px-4 py-2 w-40"
             />
           </div>
-          <Link to="/favorites">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
-              />
-            </svg>
-          </Link>
+
           <Link to="/cart">
             <svg
               xmlns="http://www.w3.org/2000/svg"

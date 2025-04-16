@@ -16,10 +16,11 @@ const AdminColorPage = () => {
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState([]);
-  const token = sessionStorage.getItem("token");
-  const headers = { Authorization: `Bearer ${token}` };
+
   const fetchColors = async () => {
     try {
+      const token = sessionStorage.getItem("accessToken");
+      const headers = { Authorization: `Bearer ${token}` };
       const response = await axios.get(
         `${API_URL}/api/Color/GetAll?pageNumber=${pageNumber}&pageSize=${pageSize}`,
         {
@@ -30,9 +31,35 @@ const AdminColorPage = () => {
         setColors(response.data.items);
       }
     } catch (error) {
+      if (error.response.status === 401) {
+        const isRefreshed = await handleRefreshToken();
+        if (isRefreshed) {
+          return fetchColors();
+        } else {
+          toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        }
+      }
       console.error("Error fetching colors:", error);
       toast.error("Không thể tải danh sách màu sắc");
     }
+  };
+  const handleRefreshToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      const response = await axios.post(`${API_URL}/api/Auth/refresh`, {
+        refreshToken: refreshToken,
+        userId: JSON.parse(sessionStorage.getItem("user") || "{}").userId,
+      });
+
+      if (response.data.accessToken) {
+        sessionStorage.setItem("accessToken", response.data.accessToken);
+        return true;
+      }
+    } catch (error) {
+      console.error("Lỗi khi làm mới token:", error);
+    }
+
+    return false;
   };
   useEffect(() => {
     fetchColors();
@@ -103,35 +130,66 @@ const AdminColorPage = () => {
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
-    setPageNumber(1); // Khi tìm kiếm thay đổi, quay lại trang 1
+    setPageNumber(1);
   };
   const toggleColorStatus = async (Id) => {
     try {
       const color = colors.find((c) => c.colorId === Id);
-
       if (!color) return;
 
-      await axios.post(
-        `${API_URL}/api/color/ChangeStatus?id=${Id}`,
-        {},
-        {
-          headers,
-        }
-      );
-      setColors(
-        colors.map((c) =>
-          c.colorId === Id ? { ...c, isActive: !c.isActive } : c
-        )
-      );
+      const token = sessionStorage.getItem("accessToken");
+      try {
+        await axios.post(
+          `${API_URL}/api/color/ChangeStatus?id=${Id}`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-      toast.success("Cập nhật trạng thái thành công");
-    } catch (error) {
-      console.error("Error toggling color status:", error);
-      console.log("Error details:", error.response?.data);
-      toast.error(
-        error.response?.data?.message || "Không thể cập nhật trạng thái"
-      );
-      fetchColors();
+        setColors(
+          colors.map((c) =>
+            c.colorId === Id ? { ...c, isActive: !c.isActive } : c
+          )
+        );
+
+        toast.success("Cập nhật trạng thái thành công");
+      } catch (error) {
+        if (error.response?.status === 401) {
+          const isRefreshed = await handleRefreshToken();
+          if (isRefreshed) {
+            const newToken = sessionStorage.getItem("accessToken");
+            await axios.post(
+              `${API_URL}/api/color/ChangeStatus?id=${Id}`,
+              {},
+              {
+                headers: { Authorization: `Bearer ${newToken}` },
+              }
+            );
+
+            setColors(
+              colors.map((c) =>
+                c.colorId === Id ? { ...c, isActive: !c.isActive } : c
+              )
+            );
+
+            toast.success("Cập nhật trạng thái thành công");
+            fetchColors();
+          } else {
+            toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+            sessionStorage.clear();
+            localStorage.removeItem("refreshToken");
+            window.location.href = "/login";
+          }
+        } else {
+          console.error("Error toggling color status:", error);
+          toast.error("Không thể cập nhật trạng thái");
+          fetchColors();
+        }
+      }
+    } catch (e) {
+      console.error("Unexpected error:", e);
+      toast.error("Đã xảy ra lỗi không mong muốn");
     }
   };
 
@@ -170,6 +228,10 @@ const AdminColorPage = () => {
     </div>
   );
   const handleUpdate = async (e) => {
+    const currentColor = colors.find((c) => c.colorId === formData.colorId);
+    const isActive = currentColor?.isActive;
+    const token = sessionStorage.getItem("accessToken");
+    const headers = { Authorization: `Bearer ${token}` };
     e.preventDefault();
     try {
       await axios.put(
@@ -177,6 +239,7 @@ const AdminColorPage = () => {
         {
           colorId: formData.colorId,
           name: formData.name,
+          isActive: isActive,
         },
         {
           headers,
@@ -185,24 +248,53 @@ const AdminColorPage = () => {
       toast.success("Cập nhật màu sắc thành công");
       setShowEditModal(false);
       setEditingColor(null);
-      setFormData({ colorId: "", name: "" }); // Reset form
+      setFormData({ colorId: "", name: "" });
       fetchColors();
     } catch (error) {
+      if (error.response?.status === 401) {
+        const isRefreshed = await handleRefreshToken();
+
+        if (isRefreshed) return fetchColors();
+        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      }
+
       console.error("Error updating color:", error);
       toast.error("Không thể cập nhật màu sắc");
     }
   };
   const deleteColor = async (colorId) => {
     try {
-      // Gửi yêu cầu xóa tới API
-      await axios.delete(`${API_URL}/api/color/Delete?id=${colorId}`, {
-        headers,
-      });
-      toast.success("Xóa màu sắc thành công");
-      fetchColors(); // Lấy lại danh sách màu sắc
-    } catch (error) {
-      console.error("Error deleting color:", error);
-      toast.error("Không thể xóa màu sắc");
+      const token = sessionStorage.getItem("accessToken");
+      try {
+        await axios.delete(`${API_URL}/api/color/Delete?id=${colorId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("Xóa màu sắc thành công");
+        fetchColors();
+      } catch (error) {
+        if (error.response?.status === 401) {
+          const isRefreshed = await handleRefreshToken();
+          if (isRefreshed) {
+            const newToken = sessionStorage.getItem("accessToken");
+            await axios.delete(`${API_URL}/api/color/Delete?id=${colorId}`, {
+              headers: { Authorization: `Bearer ${newToken}` },
+            });
+            toast.success("Xóa màu sắc thành công");
+            fetchColors();
+          } else {
+            toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+            sessionStorage.clear();
+            localStorage.removeItem("refreshToken");
+            window.location.href = "/login";
+          }
+        } else {
+          console.error("Error deleting color:", error);
+          toast.error("Không thể xóa màu sắc");
+        }
+      }
+    } catch (e) {
+      console.error("Unexpected error:", e);
+      toast.error("Đã xảy ra lỗi không mong muốn");
     }
   };
 

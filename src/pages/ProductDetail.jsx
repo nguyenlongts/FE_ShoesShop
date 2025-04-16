@@ -57,8 +57,10 @@ const ProductDetail = () => {
         setLoading(true);
         // Fetch cả thông tin sản phẩm và variants
         const [productResponse, variantsResponse] = await Promise.all([
-          axios.get(`${API_URL}/api/Product/GetByID?id=${id}`),
-          axios.get(`${API_URL}/api/ProductDetail/${id}/details`),
+          // axios.get(`${API_URL}/api/Product/GetByID?id=${id}`),
+          // axios.get(`${API_URL}/api/ProductDetail/${id}/details`),
+          axios.get(`http://localhost:5258/api/Product/GetByID?id=${id}`),
+          axios.get(`http://localhost:5258/api/ProductDetail/${id}/details`),
           //axios.get(`http://localhost:5258/api/ProductDetail/${id}/details`),
         ]);
 
@@ -78,6 +80,7 @@ const ProductDetail = () => {
 
         // Xử lý variants
         if (variantsResponse.data) {
+          console.log(variantsResponse);
           const variants = variantsResponse.data;
           setProductVariants(variants);
 
@@ -121,7 +124,7 @@ const ProductDetail = () => {
   };
 
   const getUserInfo = async () => {
-    const token = sessionStorage.getItem("token");
+    const token = sessionStorage.getItem("accessToken");
     if (!token) {
       console.error("No token found in sessionStorage");
       toast.error("Bạn cần đăng nhập để thực hiện thao tác này.");

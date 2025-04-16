@@ -20,15 +20,18 @@ const AdminUsersPage = () => {
     password: "",
   });
   const API_URL = import.meta.env.VITE_API_URL;
-  // Fetch users
   const fetchUsers = async () => {
     setLoading(true);
     try {
+      const accessToken = sessionStorage.getItem("accessToken");
       const response = await axios.get(
-        `${API_URL}/api/User/GetAll?pageSize=${pageSize}&pageNum=${pageNumber}`
-        //`http://localhost:5258/api/User/GetAll?pageSize=${pageSize}&pageNum=${pageNumber}`
+        `${API_URL}/api/User/GetAll?pageSize=${pageSize}&pageNum=${pageNumber}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
       );
-      console.log(response);
       if (response.data) {
         setUsers(response.data.items);
         setTotalPages(response.data.totalPages);
@@ -37,8 +40,17 @@ const AdminUsersPage = () => {
       }
       setLoading(false);
     } catch (error) {
-      console.error("Lỗi khi tải danh sách người dùng:", error);
-      toast.error("Không thể tải danh sách người dùng");
+      if (error.response && error.response.status === 401) {
+        const isRefreshed = await handleRefreshToken();
+        if (isRefreshed) {
+          return fetchUsers();
+        } else {
+          toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        }
+      } else {
+        console.error("Lỗi khi tải danh sách người dùng:", error);
+        toast.error("Không thể tải danh sách người dùng");
+      }
       setUsers([]);
     } finally {
       setLoading(false);
@@ -48,6 +60,25 @@ const AdminUsersPage = () => {
   useEffect(() => {
     fetchUsers();
   }, [pageSize, pageNumber]);
+  const handleRefreshToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      const response = await axios.post(`${API_URL}/api/Auth/RefreshToken`, {
+        refreshToken: refreshToken,
+      });
+
+      if (response.data && response.data.accessToken) {
+        sessionStorage.setItem("accessToken", response.data.accessToken);
+        localStorage.setItem("refreshToken", response.data.refreshToken); // nếu server trả refreshToken mới
+        return true;
+      }
+    } catch (error) {
+      console.error("Lỗi khi làm mới token:", error);
+    }
+
+    return false;
+  };
 
   const handlePageSizeChange = (e) => {
     const newSize = parseInt(e.target.value, 10);
@@ -58,44 +89,6 @@ const AdminUsersPage = () => {
     if (newPage >= 1 && newPage <= totalPages) {
       setPageNumber(newPage);
       //fetchUsers(newPage);
-    }
-  };
-
-  // Create user
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post("http://localhost:8081/saleShoes/users", formData);
-      console.log(formData);
-      toast.success("Tạo người dùng thành công");
-      setShowCreateModal(false);
-      setFormData({ username: "", fullName: "", email: "", password: "" });
-      fetchUsers();
-    } catch (error) {
-      console.error("Error creating user:", error);
-      toast.error("Không thể tạo người dùng");
-    }
-  };
-
-  // Update user
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.put(
-        `http://localhost:8081/saleShoes/users/${editingUser.userId}`,
-        {
-          ...formData,
-          active: editingUser.active,
-        }
-      );
-      toast.success("Cập nhật người dùng thành công");
-      setShowEditModal(false);
-      setEditingUser(null);
-      setFormData({ username: "", fullName: "", email: "", password: "" });
-      fetchUsers();
-    } catch (error) {
-      console.error("Error updating user:", error);
-      toast.error("Không thể cập nhật người dùng");
     }
   };
 
@@ -120,12 +113,10 @@ const AdminUsersPage = () => {
         error.response?.data?.message || "Không thể cập nhật trạng thái"
       );
 
-      // Fetch lại data nếu có lỗi
       fetchUsers();
     }
   };
 
-  // Filter users based on search query
   const filteredUsers =
     users?.filter(
       (user) =>
@@ -202,75 +193,6 @@ const AdminUsersPage = () => {
     </div>
   );
 
-  const EditModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg w-96">
-        <h2 className="text-xl font-bold mb-4">Chỉnh sửa người dùng</h2>
-        <form onSubmit={handleUpdate}>
-          <input
-            type="text"
-            placeholder="Username"
-            value={formData.username}
-            onChange={(e) =>
-              setFormData({ ...formData, username: e.target.value })
-            }
-            className="w-full px-4 py-2 border rounded-md mb-4"
-            required
-          />
-          <input
-            type="text"
-            placeholder="Họ tên"
-            value={formData.fullName}
-            onChange={(e) =>
-              setFormData({ ...formData, fullName: e.target.value })
-            }
-            className="w-full px-4 py-2 border rounded-md mb-4"
-            required
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
-            className="w-full px-4 py-2 border rounded-md mb-4"
-            required
-          />
-          <input
-            type="tel"
-            placeholder="Số điện thoại"
-            value={formData.phone}
-            onChange={(e) =>
-              setFormData({ ...formData, phone: e.target.value })
-            }
-            className="w-full px-4 py-2 border rounded-md mb-4"
-            required
-            autoFocus
-          />
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setShowEditModal(false);
-                setEditingUser(null);
-              }}
-              className="px-4 py-2 border rounded-md"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-black text-white rounded-md"
-            >
-              Cập nhật
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -321,7 +243,6 @@ const AdminUsersPage = () => {
                 <th className="text-left py-4">Email</th>
                 <th className="text-left py-4">Phone</th>
                 <th className="text-center py-4">Status</th>
-                <th className="text-right py-4">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -362,39 +283,6 @@ const AdminUsersPage = () => {
                         </button>
                       </div>
                     </td>
-                    <td className="py-4">
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          className="p-1 hover:text-blue-600"
-                          onClick={() => {
-                            setEditingUser(user);
-                            setFormData({
-                              username: user.username,
-                              fullName: user.fullName,
-                              email: user.email,
-                              password: "",
-                              phone: user.phone,
-                            });
-                            setShowEditModal(true);
-                          }}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-5 h-5"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 ))
               )}
@@ -419,9 +307,7 @@ const AdminUsersPage = () => {
           Next
         </button>
       </div>
-      {/* Modals */}
       {showCreateModal && <CreateModal />}
-      {showEditModal && <EditModal />}
     </div>
   );
 };

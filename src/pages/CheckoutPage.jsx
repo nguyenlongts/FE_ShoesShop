@@ -64,7 +64,7 @@ const CheckoutPage = () => {
 
     const loadUserInfo = async () => {
       try {
-        const token = sessionStorage.getItem("token");
+        const token = sessionStorage.getItem("accessToken");
         const user = JSON.parse(sessionStorage.getItem("user"));
         console.log(user.userId);
         if (!token || !user) {
@@ -314,11 +314,14 @@ const CheckoutPage = () => {
         }
       } else {
         try {
-          const orderResponse = await axios.post(`${API_URL}/api/orders`, {
-            userId: user.userId,
-            orderItems: orderItems,
-            shippingAddress: shippingAddress,
-          });
+          const orderResponse = await axios.post(
+            `http://localhost:5258/api/orders`,
+            {
+              userId: user.userId,
+              orderItems: orderItems,
+              shippingAddress: shippingAddress,
+            }
+          );
 
           if (orderResponse.status === 200) {
             const orderId = orderResponse.data;
