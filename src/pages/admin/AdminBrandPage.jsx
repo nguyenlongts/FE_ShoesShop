@@ -127,7 +127,7 @@ const AdminBrandPage = () => {
       toast.success("Cập nhật thương hiệu thành công");
       setShowEditModal(false);
       setEditingBrand(null);
-      setFormData({ name: "", brandID: "" });
+      setFormData({ name: "", brandID: null });
       fetchBrands();
     } catch (error) {
       if (error.response?.status === 401) {
@@ -137,13 +137,15 @@ const AdminBrandPage = () => {
         toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
       }
 
-      console.error("Error updating color:", error);
+      console.error("Error updating brand:", error);
       toast.error("Không thể cập nhật thương hiệu");
     }
   };
 
   // Toggle brand status
   const toggleBrandStatus = async (Id) => {
+    const token = sessionStorage.getItem("accessToken");
+    const headers = { Authorization: `Bearer ${token}` };
     try {
       const brand = brands.find((b) => b.brandID === Id);
       if (!brand) return;
